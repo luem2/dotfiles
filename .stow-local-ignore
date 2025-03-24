@@ -18,6 +18,7 @@ _darcs
 \.git
 \.gitignore
 \.vscode
+\wallpapers
 
 .+~          # emacs backup files
 \#.*\#       # emacs autosave files
