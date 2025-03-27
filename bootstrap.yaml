@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook
+- name: Bootstrap development environment
+  hosts: localhost
+
+  tasks:
+  - name: Install packages with dnf
+    become: yes
+    dnf:
+      name:
+        - git
+      state: present
