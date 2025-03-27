@@ -10,8 +10,5 @@ RUN useradd -m dev && \
     echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev && \
     chmod 0440 /etc/sudoers.d/dev
 
-# Configurar directorio de trabajo
-WORKDIR /workspace
-
 # Cambiar al usuario no root
 USER dev

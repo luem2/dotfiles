@@ -18,9 +18,7 @@
 				"ansible.ansible.useFullyQualifiedCollectionNames": false
 			},
 			"extensions": [
-				"redhat.ansible",
-				"ms-azuretools.vscode-docker",
-				"vivaxy.vscode-conventional-commits"
+				"redhat.ansible"
 			]
 		}
 	},
