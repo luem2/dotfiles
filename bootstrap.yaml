@@ -1,11 +1,25 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook
-- name: Bootstrap development environment
+- name: Bootstrap Desktop Environment
   hosts: localhost
+  become: true
 
   tasks:
-  - name: Install packages with dnf
-    become: yes
-    dnf:
+  - name: Upgrade all packages
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
+
+  - name: Install the 'Development tools' package group
+    ansible.builtin.dnf:
+      name: '@development-tools'
+      state: present
+
+  - name: Install packages
+    ansible.builtin.dnf:
       name:
         - git
       state: present
+
+  - name: Autoremove unneeded packages installed as dependencies
+    ansible.builtin.dnf:
+      autoremove: yes
