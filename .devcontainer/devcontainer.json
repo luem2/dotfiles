@@ -18,7 +18,16 @@
 				"ansible.ansible.useFullyQualifiedCollectionNames": false
 			},
 			"extensions": [
-				"redhat.ansible"
+				// Common
+				"redhat.ansible",
+				"ms-azuretools.vscode-docker",
+				"vivaxy.vscode-conventional-commits",
+				"Gruntfuggly.todo-tree",
+				"yzhang.markdown-all-in-one",
+				"kisstkondoros.vscode-gutter-preview",
+				"eamodio.gitlens",
+				"mhutchie.git-graph",
+				"donjayamanne.githistory"
 			]
 		}
 	},
