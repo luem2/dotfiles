@@ -4,6 +4,7 @@
   become: true
 
   tasks:
+  
   - name: Upgrade all packages
     ansible.builtin.dnf:
       name: "*"
@@ -18,7 +19,8 @@
     ansible.builtin.dnf:
       name:
         - git
-      state: present
+        - stow
+      state: latest
 
   - name: Autoremove unneeded packages installed as dependencies
     ansible.builtin.dnf:
