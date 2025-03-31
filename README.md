@@ -3,7 +3,7 @@
 ## Instalar dotfiles
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/dotfiles)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh)"
 ```
 
 ## Comando para aplicar todas las configuraciones
