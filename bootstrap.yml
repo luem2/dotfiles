@@ -15,6 +15,11 @@
       name: '@development-tools'
       state: present
 
+  - name: Install the 'Virtualization' package group
+    ansible.builtin.dnf:
+      name: 'Virtualization'
+      state: present
+
   - name: Install packages
     ansible.builtin.dnf:
       name:

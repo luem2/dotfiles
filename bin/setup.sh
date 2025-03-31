@@ -114,9 +114,6 @@ if ! [[ -f "$SSH_DIR/authorized_keys" ]]; then
   # Me traigo las llaves ssh desde Bitwarden
   bw get item "github SSH" | jq -r ".sshKey.privateKey" > "$SSH_DIR/github"
   chmod 600 "$SSH_DIR/github"
-
-  # Guardo la llave publica
-  bw get item "github SSH" | jq -r ".sshKey.publicKey" >> "$SSH_DIR/authorized_keys"
 fi
 
 # Clono el repositorio Github y lo muevo a home
@@ -129,10 +126,10 @@ else
 fi
 
 # Ejecutar el playbook de Ansible
-ansible-playbook "$DOTFILES_DIR/bootstrap.yml" --ask-become-pass
+ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
 
 # Finalizando sesión de Bitwarden
-bw logout
+bw logout &> /dev/null
 
 # Envio notificación
 if command -v notify-send 1>/dev/null 2>&1; then
