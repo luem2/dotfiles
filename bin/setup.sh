@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Declaro variables
+SSH_DIR="$HOME/.ssh"
+DOTFILES_DIR="$HOME/.dotfiles"
+REPO_URL="https://github.com/luem2/dotfiles.git"
+
 # Verificar si unzip está instalado, si no, instalarlo
 if ! command -v unzip &> /dev/null; then
     echo "⚠️📦   unzip no encontrado, instalándolo..."
@@ -97,6 +102,30 @@ fi
 if [ "$(bw status | jq -r '.status')" == "locked" ]; then
     echo "🔒   La sesión está bloqueada, desbloqueándola..."
     unlock_bitwarden
+fi
+
+# Generar las llaves SSH
+if ! [[ -f "$SSH_DIR/authorized_keys" ]]; then
+  echo "✨   Obteniendo las llaves SSH"
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+
+  # TODO: Recorrer todas las llaves SSH y crearlas.
+  # Me traigo las llaves ssh desde Bitwarden
+  bw get item "github SSH" | jq -r ".sshKey.privateKey" > "$SSH_DIR/github"
+  chmod 600 "$SSH_DIR/github"
+
+  # Guardo la llave publica
+  bw get item "github SSH" | jq -r ".sshKey.publicKey" >> "$SSH_DIR/authorized_keys"
+fi
+
+# Clono el repositorio Github y lo muevo a home
+if ! [[ -d "$DOTFILES_DIR" ]]; then
+  echo "✨   Clonando repositorio"
+  git clone --quiet $REPO_URL "$DOTFILES_DIR"
+else
+  echo "✨   Actualizando repositorio"
+  git -C "$DOTFILES_DIR" pull --quiet
 fi
 
 # Ejecutar el playbook de Ansible
