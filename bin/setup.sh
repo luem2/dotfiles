@@ -129,7 +129,7 @@ else
 fi
 
 # Ejecutar el playbook de Ansible
-ansible-playbook bootstrap.yml --ask-become-pass
+ansible-playbook "$DOTFILES_DIR/bootstrap.yml" --ask-become-pass
 
 # Finalizando sesión de Bitwarden
 bw logout
