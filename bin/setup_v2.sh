@@ -4,6 +4,19 @@
 SSH_DIR="$HOME/.ssh"
 DOTFILES_DIR="$HOME/.dotfiles"
 REPO_URL="https://github.com/luem2/dotfiles.git"
+ENV_FILE="$HOME/.dotfiles.env"
+
+set -e
+
+# Cargo las variables de entorno
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE" 
+    export BW_CLIENTID BW_CLIENTSECRET BW_PASSWORD
+else
+    echo "⚠️  Archivo de variables no encontrado: $ENV_FILE"
+    exit 1
+fi
 
 # Verificar si unzip está instalado, si no, instalarlo
 if ! command -v unzip &> /dev/null; then
@@ -46,62 +59,21 @@ if ! command -v bw &> /dev/null; then
     bw --version
 fi
 
-# Función para iniciar sesión
-login_bitwarden() {
-    while true; do
-        # Obtengo las credenciales de API KEY
-        echo "🪪   Introduce tu client_id de Bitwarden: "
-        read -r -s BW_CLIENTID
-
-        echo "🔑   Introduce tu client_secret de Bitwarden: "
-        read -r -s BW_CLIENTSECRET
-
-        # Exporto las credenciales
-        export BW_CLIENTID BW_CLIENTSECRET
-
-        if bw login --apikey; then
-            echo "✅   Ha iniciado sesión!"
-
-            return 0  # Éxito
-        else
-            echo -e "❌   Error en el inicio de sesión. Ingrese nuevamente las crendenciales."
-        fi
-    done
-}
-
-# Función para desbloquear bóveda
-unlock_bitwarden() {
-    while true; do
-        echo "🔑   Introduce tu contraseña de Bitwarden para desbloquear:"
-        read -r -s BW_PASSWORD
-
-        # Exporto la variable de entorno
-        export BW_PASSWORD
-
-        # Desbloqueo la bóveda y persisto la sesión
-        BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
-
-        if [ -n "$BW_SESSION" ]; then
-            export BW_SESSION
-
-            echo "✅   Bóveda desbloqueada!"
-            return 0  # Éxito
-        else
-            echo -e "❌   Error al desbloquear Bitwarden. Intenta nuevamente."
-        fi
-    done
-}
-
 # Verificar si no hay sesión activa e iniciar sesión si es necesario
 if [ "$(bw status | jq -r '.status')" == "unauthenticated" ]; then
-    echo "⚠️   No hay sesión activa, iniciando sesión..."
-    login_bitwarden
+    printf "⚠️   No hay sesión activa, \n 🔶   Iniciando sesión..."
+    bw login --apikey
 fi
 
 # Verificar si la sesión está bloqueada y desbloquearla si es necesario
 if [ "$(bw status | jq -r '.status')" == "locked" ]; then
     echo "🔒   La sesión está bloqueada, desbloqueándola..."
-    unlock_bitwarden
+
+    # Desbloqueo la bóveda y persisto la sesión
+    BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
+    export BW_SESSION
+
+    echo "✅   Bóveda desbloqueada correctamente!"
 fi
 
 # Crea el directorio SSH si no existe
@@ -144,6 +116,8 @@ fi
 
 # Ejecutar el playbook de Ansible
 ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
+
+rm -f "$ENV_FILE"
 
 # Envío de notificación
 if command -v notify-send >/dev/null 2>&1; then
