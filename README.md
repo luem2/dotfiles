@@ -2,6 +2,26 @@
 
 ## Instalar dotfiles
 
+### Definir variables de entorno
+
+#### Version instalacion `setup_v2.sh` 
+Definir las variables de entornos necesarias en `$HOME/dotfiles.env` para usar `Bitwarden CLI`.
+
+```sh
+BW_CLIENTID=
+BW_CLIENTSECRET=
+BW_PASSWORD=
+```
+
+_Instalación_:
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup_v2.sh)"
+```
+
+#### Version instalacion `setup.sh` 
+Para la version normal de instalación se pedirán en tiempo de ejecución los secretos.
+
+_Instalación_:
 ```sh
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh)"
 ```
