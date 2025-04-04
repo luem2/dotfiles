@@ -157,6 +157,11 @@ fi
 # Ejecutar el playbook de Ansible
 ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
 
+# Si existe el archivo de variables de entorno, lo borra
+if [ -f "$ENV_FILE" ]; then
+    rm -f "$ENV_FILE"
+fi
+
 # Envío de notificación
 if command -v notify-send >/dev/null 2>&1; then
   notify-send -a "Dotfiles: Bootstrap Completado" "✅ Se han configurado correctamente el entorno."
