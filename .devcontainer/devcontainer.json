@@ -15,7 +15,8 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"ansible.ansible.useFullyQualifiedCollectionNames": false
+				"ansible.ansible.useFullyQualifiedCollectionNames": false,
+				"extensions.verifySignature": false
 			},
 			"extensions": [
 				"redhat.ansible",
@@ -28,7 +29,8 @@
 				"mhutchie.git-graph",
 				"donjayamanne.githistory",
 				"mads-hartmann.bash-ide-vscode",
-				"timonwong.shellcheck"
+				"timonwong.shellcheck",
+				"mkhl.shfmt"
 			]
 		}
 	},
