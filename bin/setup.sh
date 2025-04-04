@@ -4,6 +4,7 @@
 SSH_DIR="$HOME/.ssh"
 DOTFILES_DIR="$HOME/.dotfiles"
 REPO_URL="https://github.com/luem2/dotfiles.git"
+ENV_FILE="$HOME/.dotfiles.env"
 
 # Verificar si unzip está instalado, si no, instalarlo
 if ! command -v unzip &> /dev/null; then
@@ -46,48 +47,59 @@ if ! command -v bw &> /dev/null; then
     bw --version
 fi
 
+# Cargo las variables de entorno (si existe el archivo ".dotfiles.env")
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE" 
+    export BW_CLIENTID BW_CLIENTSECRET BW_PASSWORD
+fi
+
 # Función para iniciar sesión
 login_bitwarden() {
     while true; do
-        # Obtengo las credenciales de API KEY
-        echo "🪪   Introduce tu client_id de Bitwarden: "
-        read -r -s BW_CLIENTID
+        # Si las credenciales no están seteadas, pedirlas
+        if [ -z "$BW_CLIENTID" ] || [ -z "$BW_CLIENTSECRET" ]; then
+            echo "🪪   Introduce tu client_id de Bitwarden:"
+            read -r -s BW_CLIENTID
 
-        echo "🔑   Introduce tu client_secret de Bitwarden: "
-        read -r -s BW_CLIENTSECRET
+            echo "🔑   Introduce tu client_secret de Bitwarden:"
+            read -r -s BW_CLIENTSECRET
 
-        # Exporto las credenciales
-        export BW_CLIENTID BW_CLIENTSECRET
+            export BW_CLIENTID BW_CLIENTSECRET
+        fi
 
+        # Intentar iniciar sesión con las credenciales
         if bw login --apikey; then
-            echo "✅   Ha iniciado sesión!"
-
+            echo "✅   Inicio de sesión exitoso!"
             return 0  # Éxito
         else
-            echo -e "❌   Error en el inicio de sesión. Ingrese nuevamente las crendenciales."
+            echo "❌   Error en el inicio de sesión. Intenta nuevamente."
+            unset BW_CLIENTID BW_CLIENTSECRET  # Limpiar credenciales erróneas
         fi
     done
 }
 
+
 # Función para desbloquear bóveda
 unlock_bitwarden() {
     while true; do
-        echo "🔑   Introduce tu contraseña de Bitwarden para desbloquear:"
-        read -r -s BW_PASSWORD
+        # Solo pedir la contraseña si no está seteada
+        if [ -z "$BW_PASSWORD" ]; then
+            echo "🔑   Introduce tu contraseña de Bitwarden para desbloquear:"
+            read -r -s BW_PASSWORD
+            export BW_PASSWORD
+        fi
 
-        # Exporto la variable de entorno
-        export BW_PASSWORD
-
-        # Desbloqueo la bóveda y persisto la sesión
+        # Intentar desbloquear la bóveda
         BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw)
 
         if [ -n "$BW_SESSION" ]; then
             export BW_SESSION
-
             echo "✅   Bóveda desbloqueada!"
             return 0  # Éxito
         else
-            echo -e "❌   Error al desbloquear Bitwarden. Intenta nuevamente."
+            echo "❌   Error al desbloquear Bitwarden. Intenta nuevamente."
+            unset BW_PASSWORD  # Limpiar la variable para volver a pedirla
         fi
     done
 }
