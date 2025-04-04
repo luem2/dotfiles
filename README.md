@@ -1,30 +1,44 @@
-# Dotfiles Luem2
+<a name="readme-top"></a>
 
-## Instalar dotfiles
+<!-- LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/luem2/dotfiles">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  </a>
 
-### Definir variables de entorno
+<h3 align="center">Luem2 dotfiles</h3>
+  <p align="center">
+    Automatización de instalaciones de programas y archivos de configuración.
+  </p>
+</div>
 
-#### Version instalacion `setup_v2.sh` 
-Definir las variables de entornos necesarias en `$HOME/dotfiles.env` para usar `Bitwarden CLI`.
+<p align="center">
+  <img src="images/screenshot.png" alt="Product Screenshot" width="600" />
+</p>
+
+<!-- GETTING STARTED -->
+## Requisitos previos
+
+### Declaracion de variables
+Los `dotfiles` requieren 3 variables para poder cargar los secretos y así poder generar las llaves e iniciar sesión a los servicios. Tenemos las siguientes opciones:
+
+- Estos podrán cargarse de forma dinámica a traves de "prompts" una vez ejecutado el comando de instalación.
+- Se pueden cargar a través de un archivo ubicado en `$HOME/.dotfiles.env`.
 
 ```sh
-BW_CLIENTID=
-BW_CLIENTSECRET=
-BW_PASSWORD=
+BW_CLIENTID= # ID (API Key)
+BW_CLIENTSECRET= # Secreto (API Key)
+BW_PASSWORD= # Contraseña maestra Bóveda Bitwarden
 ```
 
-_Instalación_:
-```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup_v2.sh)"
-```
+## Instalación
 
-#### Version instalacion `setup.sh` 
-Para la version normal de instalación se pedirán en tiempo de ejecución los secretos.
-
-_Instalación_:
 ```sh
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh)"
 ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Comando para aplicar todas las configuraciones
 
@@ -52,3 +66,7 @@ stow -d . -t ~ -S */
 ```sh
 stow -d . -t ~ --adopt -R -S */
 ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+[product-screenshot]: images/screenshot.png
