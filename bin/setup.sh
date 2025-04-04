@@ -6,6 +6,12 @@ DOTFILES_DIR="$HOME/.dotfiles"
 REPO_URL="https://github.com/luem2/dotfiles.git"
 ENV_FILE="$HOME/.dotfiles.env"
 
+# Asegurar autenticación sudo antes de instalar
+if ! sudo -v; then
+    echo "❌  No se pudo autenticar con sudo. Abortando..."
+    exit 1
+fi
+
 # Verificar si unzip está instalado, si no, instalarlo
 if ! command -v unzip &> /dev/null; then
     echo "⚠️📦   unzip no encontrado, instalándolo..."
@@ -28,8 +34,10 @@ fi
 if ! command -v bw &> /dev/null; then
     echo "⚠️📦   bw no encontrado, instalando..."
 
-    # Descargar Bitwarden CLI desde la página oficial
-    DOWNLOAD_URL="https://bitwarden.com/download/?app=cli&platform=linux"
+    BW_RAW_URL="https://bitwarden.com/download/?app=cli&platform=linux"
+
+    # Parseamos el redireccionamiento real desde la web de Bitwarden (Usa curl -Ls para seguir redirecciones y obtener la URL final)
+    DOWNLOAD_URL=$(curl -Ls -o /dev/null -w %{url_effective} "$BW_RAW_URL")
 
     # Descargar el archivo del CLI
     wget -O bitwarden-cli.zip "$DOWNLOAD_URL"
@@ -146,13 +154,14 @@ done
 echo "✅  Todas las llaves SSH han sido restauradas correctamente."
 
 # Clono el repositorio Github y lo muevo a home
-if ! [[ -d "$DOTFILES_DIR" ]]; then
-  echo "✨   Clonando repositorio"
-  git clone --quiet $REPO_URL "$DOTFILES_DIR"
+if [ ! -d "$DOTFILES_DIR" ]; then
+  echo "✨   Clonando repositorio..."
+  git clone --quiet "$REPO_URL" "$DOTFILES_DIR"
 else
-  echo "✨   Actualizando repositorio"
-  git -C "$DOTFILES_DIR" pull --quiet
+  echo "✨   Actualizando repositorio..."
+  git -C "$DOTFILES_DIR" pull --quiet --ff-only
 fi
+
 
 # Ejecutar el playbook de Ansible
 ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
