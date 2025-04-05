@@ -14,7 +14,7 @@
 </div>
 
 <p align="center">
-  <img src="images/screenshot.png" alt="Product Screenshot" width="600" />
+  <img src="images/screenshot.png" alt="Dotfiles Screenshot" width="600" />
 </p>
 
 <!-- GETTING STARTED -->
