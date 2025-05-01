@@ -150,17 +150,3 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Iniciar ssh-agent si no está en ejecución
-if [ -z "$SSH_AUTH_SOCK" ]; then
-   if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-      eval "$(ssh-agent -s)" > /dev/null
-   fi
-fi
-
-# Agregar claves privadas al ssh-agent si no están cargadas
-find ~/.ssh -type f ! -name "*.pub" | while read key; do
-   if grep -q "PRIVATE KEY" "$key" && ! ssh-add -l | grep -q "$(ssh-keygen -lf "$key" 2>/dev/null | awk '{print $2}')"; then
-      ssh-add "$key"
-   fi
-done
