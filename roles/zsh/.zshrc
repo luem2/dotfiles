@@ -115,7 +115,6 @@ alias l.='eza -a | egrep "^\."'
 #utility
 alias cat='bat'
 alias myip='curl ifconfig.me; echo'
-alias pino=$PINO_SSH # environment config in: ~/.zshenv
 alias distro='cat /etc/*-release'
 alias reload='source ~/.zshrc'
 alias lzg='lazygit'
@@ -128,14 +127,6 @@ function chpwd() {
     ls
 }
 
-# pnpm
-export PNPM_HOME="/home/$USER/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
 # bun completions
 [ -s "/home/$USER/.bun/_bun" ] && source "/home/$USER/.bun/_bun"
 
@@ -143,13 +134,12 @@ esac
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# Android Studio
-export ANDROID_HOME=$HOME/Android/Sdk
-export PATH=$PATH:$ANDROID_HOME/emulator
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-
 # Go
 export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
