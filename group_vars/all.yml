@@ -1,0 +1,26 @@
+base_packages:
+    - git
+    - stow
+    - jq
+    - curl
+    - unzip
+    - fontconfig
+    - dnf-plugins-core
+    - neovim
+      - golang
+      - rust
+      - cargo
+      - podman
+
+nerd_fonts:
+    - name: JetBrainsMono
+      url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+    - name: CascadiaCode
+      url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.zip
+
+dms_copr_repo: avengemedia/dms
+dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms.repo
+
+install_steam: false
+gaming_packages:
+    - steam

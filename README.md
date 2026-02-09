@@ -13,23 +13,21 @@
   </p>
 </div>
 
-<p align="center">
-  <img src="images/screenshot.png" alt="Dotfiles Screenshot" width="600" />
-</p>
-
 <!-- GETTING STARTED -->
 ## Requisitos previos
 
-### Declaracion de variables
-Los `dotfiles` requieren 3 variables para poder cargar los secretos y así poder generar las llaves e iniciar sesión a los servicios. Tenemos las siguientes opciones:
+- Fedora con `sudo`.
+- Bitwarden:
+  - Un item llamado `ssh-config` con un attachment `ssh_config` que contiene tu `~/.ssh/config` privado.
+  - Llaves SSH guardadas como items de tipo SSH (campo `sshKey`).
+- Opcional: archivo local con flags en `~/.config/dotfiles/vars.yml`.
 
-- Estos podrán cargarse de forma dinámica a traves de "prompts" una vez ejecutado el comando de instalación.
-- Se pueden cargar a través de un archivo ubicado en `$HOME/.dotfiles.env`.
+Ejemplo de `~/.config/dotfiles/vars.yml`:
 
-```sh
-BW_CLIENTID= # ID (API Key)
-BW_CLIENTSECRET= # Secreto (API Key)
-BW_PASSWORD= # Contraseña maestra Bóveda Bitwarden
+```yaml
+install_steam: false
+gaming_packages:
+  - steam
 ```
 
 ## Instalación
@@ -38,31 +36,16 @@ BW_PASSWORD= # Contraseña maestra Bóveda Bitwarden
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh)"
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## Comando para aplicar todas las configuraciones
+## Uso
 
 ```sh
-stow --adopt -R */
-```
-`--adopt`
-- Adopta archivos existentes en el directorio destino (ej. /usr/local).
-- Si hay archivos o enlaces que no fueron creados por Stow, los mueve al paquete correspondiente (dentro del directorio de Stow) y los reemplaza con enlaces simbólicos.
-
-`-R`
-- Reinstala los paquetes: Primero elimina los enlaces existentes y luego los vuelve a crear.
-- Útil para actualizar o corregir enlaces rotos después de modificar los paquetes.
-
-`*/`
-- Aplica la acción a todos los subdirectorios en el directorio actual (cada uno representa un paquete de Stow).
-
-## Usar Stow que no este en $HOME
-
-```sh
-stow -d . -t ~ -S */
+dotfiles
 ```
 
-## Combinar comando 1ero con el 2do
+Esto ejecuta el playbook de Ansible y aplica los enlaces con Stow usando `--adopt -R`.
+
+## Stow manual (opcional)
+
 ```sh
 stow -d . -t ~ --adopt -R -S */
 ```
