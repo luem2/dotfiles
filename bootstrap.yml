@@ -3,25 +3,161 @@
   hosts: localhost
   become: true
 
+  vars:
+      dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
+      dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
+      dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
+      dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"
+
+  pre_tasks:
+      - name: Announce local overrides path
+        ansible.builtin.debug:
+            msg: "Looking for local overrides at {{ dotfiles_local_vars_path }}"
+        changed_when: false
+        become: false
+
+      - name: Check for local overrides
+        ansible.builtin.stat:
+            path: "{{ dotfiles_local_vars_path }}"
+        register: dotfiles_local_vars
+        become: false
+
+      - name: Load local overrides
+        ansible.builtin.include_vars:
+            file: "{{ dotfiles_local_vars_path }}"
+        when: dotfiles_local_vars.stat.exists
+        become: false
+
   tasks:
-  
-  - name: Upgrade all packages
-    ansible.builtin.dnf:
-      name: "*"
-      state: latest
+      - name: Announce system package setup
+        ansible.builtin.debug:
+            msg: "System packages and updates"
+        changed_when: false
 
-  - name: Install the 'Development tools' package group
-    ansible.builtin.dnf:
-      name: '@development-tools'
-      state: present
+      - name: Upgrade all packages
+        ansible.builtin.dnf:
+            name: "*"
+            state: latest
 
-  - name: Install packages
-    ansible.builtin.dnf:
-      name:
-        - git
-        - stow
-      state: latest
+      - name: Install the 'Development tools' package group
+        ansible.builtin.dnf:
+            name: "@development-tools"
+            state: present
 
-  - name: Autoremove unneeded packages installed as dependencies
-    ansible.builtin.dnf:
-      autoremove: yes
+      - name: Install base packages
+        ansible.builtin.dnf:
+            name: "{{ base_packages }}"
+            state: present
+
+      - name: Announce window manager setup
+        ansible.builtin.debug:
+            msg: "Window manager: Niri + Dank Material Shell"
+        changed_when: false
+
+      - name: Enable DMS COPR repo
+        ansible.builtin.command:
+            cmd: "dnf -y copr enable {{ dms_copr_repo }}"
+            creates: "{{ dms_copr_repo_file }}"
+
+      - name: Install Niri + DMS
+        ansible.builtin.dnf:
+            name:
+                - niri
+                - dms
+            state: present
+
+      - name: Ensure user systemd wants directory
+        ansible.builtin.file:
+            path: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants"
+            state: directory
+            mode: "0755"
+        become: false
+
+      - name: Check for DMS user service
+        ansible.builtin.stat:
+            path: /usr/lib/systemd/user/dms.service
+        register: dms_service
+
+      - name: Link DMS to Niri wants
+        ansible.builtin.file:
+            src: /usr/lib/systemd/user/dms.service
+            dest: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants/dms.service"
+            state: link
+        when: dms_service.stat.exists
+        become: false
+
+      - name: Announce font setup
+        ansible.builtin.debug:
+            msg: "Fonts: Nerd Fonts"
+        changed_when: false
+        become: false
+
+      - name: Ensure font directories
+        ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            mode: "0755"
+        loop:
+            - "{{ dotfiles_fonts_dir }}"
+            - "{{ dotfiles_fonts_cache_dir }}"
+        become: false
+
+      - name: Download Nerd Fonts
+        ansible.builtin.get_url:
+            url: "{{ item.url }}"
+            dest: "{{ dotfiles_fonts_cache_dir }}/{{ item.name }}.zip"
+            mode: "0644"
+            use_etag: true
+            use_last_modified: true
+        register: nerd_fonts_download
+        loop: "{{ nerd_fonts }}"
+        loop_control:
+            label: "{{ item.name }}"
+        become: false
+
+      - name: Install Nerd Fonts
+        ansible.builtin.unarchive:
+            src: "{{ dotfiles_fonts_cache_dir }}/{{ item.item.name }}.zip"
+            dest: "{{ dotfiles_fonts_dir }}"
+            remote_src: true
+        loop: "{{ nerd_fonts_download.results }}"
+        loop_control:
+            label: "{{ item.item.name }}"
+        when: item.changed
+        become: false
+        notify: Refresh font cache
+
+      - name: Announce editor setup
+        ansible.builtin.debug:
+            msg: "Editors: Zed"
+        changed_when: false
+        become: false
+
+      - name: Install Zed editor
+        ansible.builtin.shell: "curl -f https://zed.dev/install.sh | sh"
+        args:
+            creates: "{{ dotfiles_user_home }}/.local/bin/zed"
+        become: false
+
+      - name: Announce gaming setup
+        ansible.builtin.debug:
+            msg: "Gaming packages (optional)"
+        changed_when: false
+        become: false
+
+      - name: Install gaming packages (optional)
+        ansible.builtin.dnf:
+            name: "{{ gaming_packages }}"
+            state: present
+        when:
+            - install_steam | bool
+            - gaming_packages | length > 0
+
+      - name: Autoremove unneeded packages installed as dependencies
+        ansible.builtin.dnf:
+            autoremove: true
+
+  handlers:
+      - name: Refresh font cache
+        ansible.builtin.command: fc-cache -f
+        become: false

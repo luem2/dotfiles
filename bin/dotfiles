@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES_REPO_URL="https://github.com/luem2/dotfiles.git"
+DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
+DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
+INSTALL_PATH="$HOME/.local/bin/dotfiles"
+
+SSH_DIR="$HOME/.ssh"
+SSH_CONFIG_DIR="$SSH_DIR/config.d"
+SSH_CONFIG_BW="$SSH_CONFIG_DIR/bitwarden.conf"
+
+BW_ITEM_NAME="ssh-config"
+BW_ATTACHMENT_NAME="ssh_config"
+
+if command -v tput >/dev/null 2>&1 && [ -t 1 ]; then
+  BOLD="$(tput bold)"
+  RED="$(tput setaf 1)"
+  GREEN="$(tput setaf 2)"
+  YELLOW="$(tput setaf 3)"
+  BLUE="$(tput setaf 4)"
+  RESET="$(tput sgr0)"
+else
+  BOLD=""
+  RED=""
+  GREEN=""
+  YELLOW=""
+  BLUE=""
+  RESET=""
+fi
+
+ICON_INFO="*"
+ICON_OK="+"
+ICON_WARN="!"
+ICON_ERROR="x"
+
+log_info() { printf "%b\n" "${BLUE}${ICON_INFO}${RESET} ${BLUE}[INFO]${RESET} $*"; }
+log_ok() { printf "%b\n" "${GREEN}${ICON_OK}${RESET} ${GREEN}[OK]${RESET} $*"; }
+log_warn() { printf "%b\n" "${YELLOW}${ICON_WARN}${RESET} ${YELLOW}[WARN]${RESET} $*"; }
+log_error() { printf "%b\n" "${RED}${ICON_ERROR}${RESET} ${RED}[ERROR]${RESET} $*"; }
+die() { log_error "$*"; exit 1; }
+
+require_sudo() {
+  if ! sudo -v; then
+    die "sudo authentication failed. Aborting."
+  fi
+}
+
+ensure_dnf() {
+  if ! command -v dnf >/dev/null 2>&1; then
+    die "dnf not found. This setup is Fedora-only."
+  fi
+}
+
+ensure_base_packages() {
+  log_info "Installing base packages"
+  sudo dnf install -y git curl jq unzip ansible stow
+}
+
+ensure_bitwarden() {
+  if command -v bw >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log_info "Installing Bitwarden CLI"
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  curl -fsSL -o "$tmp_dir/bw.zip" "https://bitwarden.com/download/?app=cli&platform=linux"
+  unzip -q "$tmp_dir/bw.zip" -d "$tmp_dir"
+  sudo install -m 0755 "$tmp_dir/bw" /usr/local/bin/bw
+  rm -rf "$tmp_dir"
+}
+
+ensure_repo() {
+  if [ -d "$DOTFILES_DIR/.git" ]; then
+    log_info "Updating dotfiles repo"
+    git -C "$DOTFILES_DIR" pull --quiet --ff-only
+  else
+    log_info "Cloning dotfiles repo"
+    git clone --quiet "$DOTFILES_REPO_URL" "$DOTFILES_DIR"
+  fi
+}
+
+install_dotfiles_binary() {
+  mkdir -p "$(dirname "$INSTALL_PATH")"
+  if [ -f "$DOTFILES_DIR/bin/dotfiles" ]; then
+    if [ ! -f "$INSTALL_PATH" ] || ! cmp -s "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"; then
+      install -m 0755 "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"
+    fi
+  fi
+}
+
+bw_login() {
+  local client_id client_secret
+  while true; do
+    client_id="${BW_CLIENTID:-}"
+    client_secret="${BW_CLIENTSECRET:-}"
+
+    if [ -z "$client_id" ]; then
+      echo -n "Bitwarden client_id: "
+      read -r -s client_id
+      echo
+    fi
+
+    if [ -z "$client_secret" ]; then
+      echo -n "Bitwarden client_secret: "
+      read -r -s client_secret
+      echo
+    fi
+
+    export BW_CLIENTID="$client_id"
+    export BW_CLIENTSECRET="$client_secret"
+
+    if bw login --apikey >/dev/null; then
+      return 0
+    fi
+
+    log_warn "Bitwarden login failed. Try again."
+    unset BW_CLIENTID BW_CLIENTSECRET
+  done
+}
+
+bw_unlock() {
+  local password
+  while true; do
+    password="${BW_PASSWORD:-}"
+    if [ -z "$password" ]; then
+      echo -n "Bitwarden master password: "
+      read -r -s password
+      echo
+    fi
+
+    export BW_PASSWORD="$password"
+    export BW_SESSION
+    BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw 2>/dev/null || true)
+
+    if [ -n "${BW_SESSION:-}" ]; then
+      return 0
+    fi
+
+    log_warn "Bitwarden unlock failed. Try again."
+    unset BW_PASSWORD
+  done
+}
+
+bw_status() {
+  local status_json status
+
+  if [ -n "${BW_SESSION:-}" ]; then
+    if status_json=$(bw --session "$BW_SESSION" status 2>/dev/null); then
+      status=$(echo "$status_json" | jq -r '.status')
+      echo "$status"
+      return 0
+    fi
+    unset BW_SESSION
+  fi
+
+  status_json=$(bw status 2>/dev/null || true)
+  status=$(echo "$status_json" | jq -r '.status' 2>/dev/null || true)
+  if [ -z "$status" ] || [ "$status" = "null" ]; then
+    status="unauthenticated"
+  fi
+  echo "$status"
+}
+
+ensure_bw_session() {
+  local status
+  status=$(bw_status)
+
+  if [ "$status" = "unauthenticated" ]; then
+    log_info "Logging into Bitwarden"
+    bw_login
+    status=$(bw_status)
+  fi
+
+  if [ "$status" = "locked" ] || [ -z "${BW_SESSION:-}" ]; then
+    log_info "Unlocking Bitwarden vault"
+    bw_unlock
+  fi
+
+  bw --session "$BW_SESSION" sync >/dev/null
+}
+
+restore_ssh_keys() {
+  log_info "Restoring SSH keys from Bitwarden"
+  mkdir -p "$SSH_DIR" "$SSH_CONFIG_DIR"
+  chmod 700 "$SSH_DIR" "$SSH_CONFIG_DIR"
+
+  bw --session "$BW_SESSION" list items | jq -r '.[] | select(.sshKey.privateKey != null) | .id' | while read -r item_id; do
+    [ -n "$item_id" ] || continue
+    local item key_name private_key key_path
+    item=$(bw --session "$BW_SESSION" get item "$item_id")
+    key_name=$(echo "$item" | jq -r '.name' | sed 's/[^a-zA-Z0-9_-]/_/g')
+    private_key=$(echo "$item" | jq -r '.sshKey.privateKey')
+
+    if [ -n "$private_key" ] && [ "$private_key" != "null" ]; then
+      key_path="$SSH_DIR/$key_name"
+      printf '%s\n' "$private_key" >"$key_path"
+      chmod 600 "$key_path"
+    fi
+  done
+}
+
+restore_ssh_config() {
+  local item_id
+  item_id=$(bw --session "$BW_SESSION" list items --search "$BW_ITEM_NAME" | jq -r '.[] | select(.name == "'"$BW_ITEM_NAME"'") | .id' | head -n 1)
+
+  if [ -z "$item_id" ]; then
+    log_error "Bitwarden item '$BW_ITEM_NAME' not found."
+    return 1
+  fi
+
+  bw --session "$BW_SESSION" get attachment "$BW_ATTACHMENT_NAME" --itemid "$item_id" --output "$SSH_CONFIG_BW" >/dev/null
+  chmod 600 "$SSH_CONFIG_BW"
+}
+
+prepare_ssh_config_for_stow() {
+  if [ -f "$SSH_DIR/config" ] && [ ! -L "$SSH_DIR/config" ]; then
+    mkdir -p "$SSH_CONFIG_DIR"
+    if [ ! -f "$SSH_CONFIG_DIR/local.conf" ]; then
+      mv "$SSH_DIR/config" "$SSH_CONFIG_DIR/local.conf"
+    else
+      mv "$SSH_DIR/config" "$SSH_CONFIG_DIR/local.conf.$(date +%s)"
+    fi
+  fi
+}
+
+run_ansible() {
+  log_info "Running Ansible playbook"
+  ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
+}
+
+run_stow() {
+  if [ ! -d "$DOTFILES_DIR/roles" ]; then
+    return 0
+  fi
+
+  log_info "Applying Stow packages"
+  (cd "$DOTFILES_DIR/roles" && stow -d "$DOTFILES_DIR/roles" -t "$HOME" --adopt -R */)
+}
+
+main() {
+  log_info "Starting dotfiles"
+  require_sudo
+  ensure_dnf
+  ensure_base_packages
+  ensure_bitwarden
+  ensure_repo
+  install_dotfiles_binary
+  ensure_bw_session
+  restore_ssh_keys
+  restore_ssh_config
+  prepare_ssh_config_for_stow
+  run_ansible
+  run_stow
+}
+
+main "$@"

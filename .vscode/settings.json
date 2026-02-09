@@ -1,8 +1,0 @@
-{
-    "ansible.python.interpreterPath": "/usr/bin/python3",
-    "[shellscript]": {
-        "files.eol": "\n",
-        "editor.defaultColorDecorators": "never",
-        "editor.defaultFormatter": "mkhl.shfmt",
-    }
-}
