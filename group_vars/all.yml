@@ -7,10 +7,10 @@ base_packages:
     - fontconfig
     - dnf-plugins-core
     - neovim
-      - golang
-      - rust
-      - cargo
-      - podman
+    - golang
+    - rust
+    - cargo
+    - podman
 
 nerd_fonts:
     - name: JetBrainsMono
