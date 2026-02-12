@@ -9,6 +9,7 @@ INSTALL_PATH="$HOME/.local/bin/dotfiles"
 SSH_DIR="$HOME/.ssh"
 SSH_CONFIG_DIR="$SSH_DIR/config.d"
 SSH_CONFIG_BW="$SSH_CONFIG_DIR/bitwarden.conf"
+GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
 
 BW_ITEM_NAME="ssh-config"
 BW_ATTACHMENT_NAME="ssh_config"
@@ -230,6 +231,58 @@ run_ansible() {
   ansible-playbook "$DOTFILES_DIR/bootstrap.yml"
 }
 
+prompt_value() {
+  local prompt="$1"
+  local default="${2:-}"
+  local value=""
+
+  while true; do
+    if [ -n "$default" ]; then
+      echo -n "$prompt [$default]: "
+      read -r value
+      value="${value:-$default}"
+    else
+      echo -n "$prompt: "
+      read -r value
+    fi
+
+    if [ -n "$value" ]; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  done
+}
+
+ensure_gitconfig_local() {
+  local local_name local_email
+  local_name="$(git config --file "$GITCONFIG_LOCAL_PATH" --get user.name 2>/dev/null || true)"
+  local_email="$(git config --file "$GITCONFIG_LOCAL_PATH" --get user.email 2>/dev/null || true)"
+
+  if [ -f "$GITCONFIG_LOCAL_PATH" ] && [ -n "$local_email" ]; then
+    return 0
+  fi
+
+  log_info "Configuring Git identity"
+  local current_name current_email git_name git_email
+  current_name="$(git config --global --get user.name 2>/dev/null || true)"
+  current_email="$(git config --global --get user.email 2>/dev/null || true)"
+
+  git_name="$(prompt_value "Git user.name" "${local_name:-${current_name:-$USER}}")"
+
+  while true; do
+    git_email="$(prompt_value "Git user.email" "${local_email:-$current_email}")"
+    if [[ "$git_email" == *"@"* ]]; then
+      break
+    fi
+    log_warn "Invalid email format. Please try again."
+  done
+
+  git config --file "$GITCONFIG_LOCAL_PATH" user.name "$git_name"
+  git config --file "$GITCONFIG_LOCAL_PATH" user.email "$git_email"
+  chmod 600 "$GITCONFIG_LOCAL_PATH"
+  log_ok "Generated $GITCONFIG_LOCAL_PATH"
+}
+
 run_stow() {
   if [ ! -d "$DOTFILES_DIR/roles" ]; then
     return 0
@@ -251,6 +304,7 @@ main() {
   restore_ssh_keys
   restore_ssh_config
   prepare_ssh_config_for_stow
+  ensure_gitconfig_local
   run_ansible
   run_stow
 }
