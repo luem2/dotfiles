@@ -1,16 +1,49 @@
+base_package_groups:
+    - "@development-tools"
+    - "@C Development Tools and Libraries"
+    - "@Container Management"
+    - "@Administration Tools"
+    - "@Standard"
+
 base_packages:
     - git
-    - stow
-    - jq
     - curl
+    - wget
+    - neovim
+    - ripgrep
+    - fd-find
+    - fzf
+    - bat
+    - jq
+    - htop
+    - btop
+    - tree
     - unzip
+    - zip
+    - rsync
+    - stow
+    - zoxide
+    - eza
+    - shellcheck
+    - wl-clipboard
     - fontconfig
     - dnf-plugins-core
-    - neovim
+    - NetworkManager-openvpn
+    - NetworkManager-wireguard
+    - openvpn
+    - wireguard-tools
+    - podman
+    - podman-compose
     - golang
+    - golang-x-tools
+    - delve
     - rust
     - cargo
-    - podman
+
+go_tools:
+    - name: air
+      module: github.com/air-verse/air@latest
+      binary: air
 
 nerd_fonts:
     - name: JetBrainsMono

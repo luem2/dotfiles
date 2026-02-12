@@ -39,15 +39,24 @@
             name: "*"
             state: latest
 
-      - name: Install the 'Development tools' package group
+      - name: Install package groups
         ansible.builtin.dnf:
-            name: "@development-tools"
+            name: "{{ base_package_groups }}"
             state: present
 
       - name: Install base packages
         ansible.builtin.dnf:
             name: "{{ base_packages }}"
             state: present
+
+      - name: Install Go developer tools
+        ansible.builtin.command:
+            cmd: "go install {{ item.module }}"
+            creates: "{{ dotfiles_user_home }}/go/bin/{{ item.binary }}"
+        loop: "{{ go_tools }}"
+        loop_control:
+            label: "{{ item.name }}"
+        become: false
 
       - name: Announce window manager setup
         ansible.builtin.debug:
