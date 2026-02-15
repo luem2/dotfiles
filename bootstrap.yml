@@ -57,10 +57,95 @@
             state: present
         when: install_hardware_support_group | bool
 
-      - name: Install base packages
-        ansible.builtin.dnf:
-            name: "{{ base_packages }}"
-            state: present
+    - name: Install base packages
+      ansible.builtin.dnf:
+        name: "{{ base_packages }}"
+        state: present
+
+    - name: Enable pipes.sh COPR repo
+      ansible.builtin.command:
+        cmd: "dnf -y copr enable {{ pipes_copr_repo }}"
+        creates: "{{ pipes_copr_repo_file }}"
+
+    - name: Install pipes.sh
+      ansible.builtin.dnf:
+        name: pipes.sh
+        state: present
+
+    - name: Enable Ghostty COPR repo
+      ansible.builtin.command:
+        cmd: "dnf -y copr enable {{ ghostty_copr_repo }}"
+        creates: "{{ ghostty_copr_repo_file }}"
+
+    - name: Install Ghostty
+      ansible.builtin.dnf:
+        name: ghostty
+        state: present
+
+    - name: Enable Danklinux COPR repo
+      ansible.builtin.command:
+        cmd: "dnf -y copr enable {{ danklinux_copr_repo }}"
+        creates: "{{ danklinux_copr_repo_file }}"
+
+    - name: Install Dank Search
+      ansible.builtin.dnf:
+        name: dsearch
+        state: present
+
+    - name: Download eza
+      ansible.builtin.get_url:
+        url: "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz"
+        dest: /tmp/eza.tar.gz
+        mode: "0644"
+
+    - name: Install eza
+      ansible.builtin.unarchive:
+        src: /tmp/eza.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        creates: /usr/local/bin/eza
+
+    - name: Ensure eza binary permissions
+      ansible.builtin.file:
+        path: /usr/local/bin/eza
+        mode: "0755"
+
+    - name: Clean up eza tarball
+      ansible.builtin.file:
+        path: /tmp/eza.tar.gz
+        state: absent
+
+    - name: Fetch latest Anytype release metadata
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
+        return_content: true
+      register: anytype_release
+      when: install_anytype_rpm | bool
+
+    - name: Select Anytype RPM asset
+      ansible.builtin.set_fact:
+        anytype_rpm_url: "{{ item.browser_download_url }}"
+      loop: "{{ anytype_release.json.assets }}"
+      when:
+        - install_anytype_rpm | bool
+        - anytype_release is defined
+        - item.name is regex('x86_64.*\\.rpm$')
+        - anytype_rpm_url is not defined
+
+    - name: Fail if Anytype RPM asset not found
+      ansible.builtin.fail:
+        msg: "Anytype RPM asset not found in latest GitHub release."
+      when:
+        - install_anytype_rpm | bool
+        - anytype_rpm_url is not defined
+
+    - name: Install Anytype RPM
+      ansible.builtin.dnf:
+        name: "{{ anytype_rpm_url }}"
+        state: present
+      when:
+        - install_anytype_rpm | bool
+        - anytype_rpm_url is defined
 
       - name: Configure VS Code repository
         ansible.builtin.yum_repository:
@@ -214,11 +299,17 @@
             creates: "{{ dotfiles_user_home }}/.local/share/fnm/fnm"
         become: false
 
-      - name: Install Bun
-        ansible.builtin.shell: "curl -fsSL https://bun.sh/install | bash"
-        args:
-            creates: "{{ dotfiles_user_home }}/.bun/bin/bun"
-        become: false
+    - name: Install Bun
+      ansible.builtin.shell: "curl -fsSL https://bun.sh/install | bash"
+      args:
+        creates: "{{ dotfiles_user_home }}/.bun/bin/bun"
+      become: false
+
+    - name: Install OpenCode (Bun)
+      ansible.builtin.command:
+        cmd: "{{ dotfiles_user_home }}/.bun/bin/bun add -g opencode-ai"
+        creates: "{{ dotfiles_user_home }}/.bun/bin/opencode"
+      become: false
 
       - name: Add Flathub remote
         ansible.builtin.command:

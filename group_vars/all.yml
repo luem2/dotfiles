@@ -26,7 +26,6 @@ base_packages:
     - jq
     - htop
     - btop
-    - pipes
     - cmatrix
     - tree
     - unzip
@@ -34,7 +33,6 @@ base_packages:
     - rsync
     - stow
     - zoxide
-    - eza
     - shellcheck
     - wl-clipboard
     - rbw
@@ -42,13 +40,12 @@ base_packages:
     - fontconfig
     - dnf-plugins-core
     - NetworkManager-openvpn
-    - NetworkManager-wireguard
     - openvpn
     - wireguard-tools
     - podman
     - podman-compose
     - golang
-    - golang-x-tools
+    - golang-x-tools-devel
     - delve
     - rust
     - cargo
@@ -58,12 +55,10 @@ base_packages:
     - gnome-software
     - gnome-disk-utility
     - nautilus
-    - ghostty
     - firewalld
     - gimp
     - inkscape
     - krita
-    - opencode
     - nmap
     - dconf
     - avahi
@@ -71,8 +66,6 @@ base_packages:
     - snapper
     - restic
     - cava
-    - danksearch
-    - anytype
 
 repo_packages:
     - code
@@ -131,6 +124,17 @@ nerd_fonts:
 
 dms_copr_repo: avengemedia/dms
 dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms.repo
+
+pipes_copr_repo: dmoises/pipes.sh
+pipes_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:dmoises:pipes.sh.repo
+
+ghostty_copr_repo: scottames/ghostty
+ghostty_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
+
+danklinux_copr_repo: avengemedia/danklinux
+danklinux_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:danklinux.repo
+
+install_anytype_rpm: true
 
 install_steam: false
 gaming_packages:
