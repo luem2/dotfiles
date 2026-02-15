@@ -5,6 +5,7 @@
 
   vars:
       dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
+      dotfiles_user_name: "{{ lookup('env', 'USER') }}"
       dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
       dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
       dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"
@@ -44,10 +45,150 @@
             name: "{{ base_package_groups }}"
             state: present
 
+      - name: Install optional multimedia group
+        ansible.builtin.dnf:
+            name: "{{ optional_package_groups.multimedia }}"
+            state: present
+        when: install_multimedia_group | bool
+
+      - name: Install optional hardware support group
+        ansible.builtin.dnf:
+            name: "{{ optional_package_groups.hardware_support }}"
+            state: present
+        when: install_hardware_support_group | bool
+
       - name: Install base packages
         ansible.builtin.dnf:
             name: "{{ base_packages }}"
             state: present
+
+      - name: Configure VS Code repository
+        ansible.builtin.yum_repository:
+            name: vscode
+            description: Visual Studio Code
+            baseurl: https://packages.microsoft.com/yumrepos/vscode
+            enabled: true
+            gpgcheck: true
+            gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+
+      - name: Configure Google Chrome repository
+        ansible.builtin.yum_repository:
+            name: google-chrome
+            description: Google Chrome
+            baseurl: http://dl.google.com/linux/chrome/rpm/stable/$basearch
+            enabled: true
+            gpgcheck: true
+            gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+
+      - name: Install repository packages
+        ansible.builtin.dnf:
+            name: "{{ repo_packages }}"
+            state: present
+
+      - name: Install virtualization packages
+        ansible.builtin.dnf:
+            name: "{{ virtualization_packages }}"
+            state: present
+
+      - name: Check SELinux status
+        ansible.builtin.command: getenforce
+        register: selinux_status
+        changed_when: false
+
+      - name: Set SELinux to enforcing if needed
+        ansible.builtin.command: setenforce 1
+        when: selinux_status.stdout != "Enforcing"
+
+      - name: Ensure SELinux config is enforcing
+        ansible.builtin.lineinfile:
+            path: /etc/selinux/config
+            regexp: "^SELINUX="
+            line: "SELINUX=enforcing"
+        when: selinux_status.stdout != "Enforcing"
+
+      - name: Report SELinux status
+        ansible.builtin.debug:
+            msg: "SELinux status: {{ selinux_status.stdout }}"
+        changed_when: false
+
+      - name: Gather service facts
+        ansible.builtin.service_facts:
+
+      - name: Detect existing display manager
+        ansible.builtin.set_fact:
+            has_display_manager: "{{ 'display-manager.service' in ansible_facts.services }}"
+
+      - name: Install greetd packages when no display manager exists
+        ansible.builtin.dnf:
+            name: "{{ greetd_packages }}"
+            state: present
+        when:
+            - install_greetd_if_no_dm | bool
+            - not has_display_manager
+
+      - name: Configure greetd for Niri
+        ansible.builtin.copy:
+            dest: /etc/greetd/config.toml
+            mode: "0644"
+            content: |
+                [terminal]
+                vt = 1
+
+                [default_session]
+                command = "dms-greeter --command niri -C /etc/greetd/niri.kdl"
+                user = "greeter"
+        when:
+            - install_greetd_if_no_dm | bool
+            - not has_display_manager
+
+      - name: Configure greetd Niri session
+        ansible.builtin.copy:
+            dest: /etc/greetd/niri.kdl
+            mode: "0644"
+            content: |
+                environment {
+                    DMS_RUN_GREETER = "1"
+                }
+        when:
+            - install_greetd_if_no_dm | bool
+            - not has_display_manager
+
+      - name: Ensure graphical target is default when greetd is used
+        ansible.builtin.command: systemctl set-default graphical.target
+        changed_when: false
+        when:
+            - install_greetd_if_no_dm | bool
+            - not has_display_manager
+
+      - name: Enable and start greetd when installed
+        ansible.builtin.systemd:
+            name: greetd
+            enabled: true
+            state: started
+        when:
+            - install_greetd_if_no_dm | bool
+            - not has_display_manager
+
+      - name: Enable and start libvirtd
+        ansible.builtin.systemd:
+            name: libvirtd
+            enabled: true
+            state: started
+
+      - name: Add user to virtualization groups
+        ansible.builtin.user:
+            name: "{{ dotfiles_user_name }}"
+            groups:
+                - libvirt
+                - kvm
+            append: true
+
+      - name: Enable core services
+        ansible.builtin.systemd:
+            name: "{{ item }}"
+            enabled: true
+            state: started
+        loop: "{{ core_services }}"
 
       - name: Install Go developer tools
         ansible.builtin.command:
@@ -57,6 +198,54 @@
         loop_control:
             label: "{{ item.name }}"
         become: false
+
+      - name: Install Cargo developer tools
+        ansible.builtin.command:
+            cmd: "cargo install {{ item.crate }}"
+            creates: "{{ dotfiles_user_home }}/.cargo/bin/{{ item.binary }}"
+        loop: "{{ cargo_tools }}"
+        loop_control:
+            label: "{{ item.name }}"
+        become: false
+
+      - name: Install fnm
+        ansible.builtin.shell: "curl -fsSL https://fnm.vercel.app/install | bash"
+        args:
+            creates: "{{ dotfiles_user_home }}/.local/share/fnm/fnm"
+        become: false
+
+      - name: Install Bun
+        ansible.builtin.shell: "curl -fsSL https://bun.sh/install | bash"
+        args:
+            creates: "{{ dotfiles_user_home }}/.bun/bin/bun"
+        become: false
+
+      - name: Add Flathub remote
+        ansible.builtin.command:
+            cmd: "flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo"
+
+      - name: Install Flatpak applications
+        ansible.builtin.command:
+            cmd: "flatpak install -y --noninteractive flathub {{ item }}"
+        register: flatpak_install
+        changed_when: "'already installed' not in (flatpak_install.stdout | lower)"
+        loop: "{{ flatpak_apps }}"
+        loop_control:
+            label: "{{ item }}"
+
+      - name: Remove Flatpak YouTube Music if present
+        ansible.builtin.command:
+            cmd: "flatpak uninstall -y --noninteractive app.ytmdesktop.ytmdesktop"
+        register: flatpak_remove_ytm
+        changed_when: "'not installed' not in (flatpak_remove_ytm.stdout | lower) and 'not installed' not in (flatpak_remove_ytm.stderr | lower)"
+        failed_when: false
+        when: install_youtube_music_rpm | bool
+
+      - name: Install YouTube Music (Pear Desktop) RPM
+        ansible.builtin.dnf:
+            name: "{{ youtube_music_rpm_url }}"
+            state: present
+        when: install_youtube_music_rpm | bool
 
       - name: Announce window manager setup
         ansible.builtin.debug:

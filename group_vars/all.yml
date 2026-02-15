@@ -4,12 +4,21 @@ base_package_groups:
     - "@Container Management"
     - "@Administration Tools"
     - "@Standard"
+    - "@System Tools"
+
+install_multimedia_group: false
+install_hardware_support_group: false
+
+optional_package_groups:
+    multimedia: "@Multimedia"
+    hardware_support: "@Hardware Support"
 
 base_packages:
     - git
     - curl
     - wget
     - neovim
+    - helix
     - ripgrep
     - fd-find
     - fzf
@@ -17,6 +26,8 @@ base_packages:
     - jq
     - htop
     - btop
+    - pipes
+    - cmatrix
     - tree
     - unzip
     - zip
@@ -26,6 +37,7 @@ base_packages:
     - eza
     - shellcheck
     - wl-clipboard
+    - flatpak
     - fontconfig
     - dnf-plugins-core
     - NetworkManager-openvpn
@@ -39,11 +51,76 @@ base_packages:
     - delve
     - rust
     - cargo
+    - libreoffice
+    - thunderbird
+    - gnome-control-center
+    - gnome-software
+    - gnome-disk-utility
+    - nautilus
+    - ghostty
+    - firewalld
+    - gimp
+    - inkscape
+    - krita
+    - opencode
+    - nmap
+    - dconf
+    - avahi
+    - nss-mdns
+    - snapper
+    - restic
+    - cava
+    - danksearch
+    - anytype
+
+repo_packages:
+    - code
+    - google-chrome-stable
+
+flatpak_apps:
+    - io.dbeaver.DBeaverCommunity
+    - com.usebruno.Bruno
+    - org.localsend.localsend_app
+    - com.discordapp.Discord
+    - com.slack.Slack
+
+install_youtube_music_rpm: true
+youtube_music_rpm_url: "https://github.com/pear-devs/pear-desktop/releases/download/v3.11.0/youtube-music-3.11.0.x86_64.rpm"
 
 go_tools:
     - name: air
       module: github.com/air-verse/air@latest
       binary: air
+
+cargo_tools:
+    - name: yazi
+      crate: yazi-fm
+      binary: yazi
+
+virtualization_packages:
+    - qemu-kvm
+    - libvirt
+    - libvirt-daemon-kvm
+    - libvirt-daemon-config-network
+    - virt-install
+    - virt-manager
+    - virt-viewer
+    - edk2-ovmf
+    - swtpm
+    - guestfs-tools
+    - virt-top
+    - virtio-win
+
+greetd_packages:
+    - greetd
+    - dms-greeter
+
+install_greetd_if_no_dm: true
+
+core_services:
+    - firewalld
+    - fstrim.timer
+    - avahi-daemon
 
 nerd_fonts:
     - name: JetBrainsMono
