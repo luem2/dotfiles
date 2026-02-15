@@ -92,32 +92,44 @@ install_dotfiles_binary() {
 }
 
 bw_login() {
-  local client_id client_secret
+  local client_id client_secret session
   while true; do
     client_id="${BW_CLIENTID:-}"
     client_secret="${BW_CLIENTSECRET:-}"
 
-    if [ -z "$client_id" ]; then
-      echo -n "Bitwarden client_id: "
-      read -r -s client_id
-      echo
+    if [ -n "$client_id" ] || [ -n "$client_secret" ]; then
+      if [ -z "$client_id" ]; then
+        echo -n "Bitwarden client_id: "
+        read -r -s client_id
+        echo
+      fi
+
+      if [ -z "$client_secret" ]; then
+        echo -n "Bitwarden client_secret: "
+        read -r -s client_secret
+        echo
+      fi
+
+      export BW_CLIENTID="$client_id"
+      export BW_CLIENTSECRET="$client_secret"
+
+      if bw login --apikey >/dev/null; then
+        return 0
+      fi
+
+      log_warn "Bitwarden login failed. Try again."
+      unset BW_CLIENTID BW_CLIENTSECRET
+      continue
     fi
 
-    if [ -z "$client_secret" ]; then
-      echo -n "Bitwarden client_secret: "
-      read -r -s client_secret
-      echo
-    fi
-
-    export BW_CLIENTID="$client_id"
-    export BW_CLIENTSECRET="$client_secret"
-
-    if bw login --apikey >/dev/null; then
+    log_info "Bitwarden login (email + password)"
+    session=$(bw login --raw || true)
+    if [ -n "$session" ]; then
+      export BW_SESSION="$session"
       return 0
     fi
 
     log_warn "Bitwarden login failed. Try again."
-    unset BW_CLIENTID BW_CLIENTSECRET
   done
 }
 
