@@ -1,2 +1,3 @@
 *.bak
 *.backup*
+roles/vscode/.config/Code/User/settings.json
