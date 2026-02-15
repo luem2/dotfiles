@@ -51,5 +51,3 @@ stow -d . -t ~ --adopt -R -S */
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-[product-screenshot]: images/screenshot.png
