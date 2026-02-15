@@ -57,95 +57,99 @@
             state: present
         when: install_hardware_support_group | bool
 
-    - name: Install base packages
-      ansible.builtin.dnf:
-        name: "{{ base_packages }}"
-        state: present
+      - name: Install base packages
+        ansible.builtin.dnf:
+            name: "{{ base_packages }}"
+            state: present
 
-    - name: Enable pipes.sh COPR repo
-      ansible.builtin.command:
-        cmd: "dnf -y copr enable {{ pipes_copr_repo }}"
-        creates: "{{ pipes_copr_repo_file }}"
+      - name: Install COPR packages
+        block:
+            - name: Enable pipes.sh COPR repo
+              ansible.builtin.command:
+                  cmd: "dnf -y copr enable {{ pipes_copr_repo }}"
+                  creates: "{{ pipes_copr_repo_file }}"
 
-    - name: Install pipes.sh
-      ansible.builtin.dnf:
-        name: pipes.sh
-        state: present
+            - name: Install pipes.sh
+              ansible.builtin.dnf:
+                  name: pipes.sh
+                  state: present
 
-    - name: Enable Ghostty COPR repo
-      ansible.builtin.command:
-        cmd: "dnf -y copr enable {{ ghostty_copr_repo }}"
-        creates: "{{ ghostty_copr_repo_file }}"
+            - name: Enable Ghostty COPR repo
+              ansible.builtin.command:
+                  cmd: "dnf -y copr enable {{ ghostty_copr_repo }}"
+                  creates: "{{ ghostty_copr_repo_file }}"
 
-    - name: Install Ghostty
-      ansible.builtin.dnf:
-        name: ghostty
-        state: present
+            - name: Install Ghostty
+              ansible.builtin.dnf:
+                  name: ghostty
+                  state: present
 
-    - name: Enable Danklinux COPR repo
-      ansible.builtin.command:
-        cmd: "dnf -y copr enable {{ danklinux_copr_repo }}"
-        creates: "{{ danklinux_copr_repo_file }}"
+            - name: Enable Danklinux COPR repo
+              ansible.builtin.command:
+                  cmd: "dnf -y copr enable {{ danklinux_copr_repo }}"
+                  creates: "{{ danklinux_copr_repo_file }}"
 
-    - name: Install Dank Search
-      ansible.builtin.dnf:
-        name: dsearch
-        state: present
+            - name: Install Dank Search
+              ansible.builtin.dnf:
+                  name: dsearch
+                  state: present
 
-    - name: Download eza
-      ansible.builtin.get_url:
-        url: "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz"
-        dest: /tmp/eza.tar.gz
-        mode: "0644"
+      - name: Install GitHub release packages
+        block:
+            - name: Download eza
+              ansible.builtin.get_url:
+                  url: "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz"
+                  dest: /tmp/eza.tar.gz
+                  mode: "0644"
 
-    - name: Install eza
-      ansible.builtin.unarchive:
-        src: /tmp/eza.tar.gz
-        dest: /usr/local/bin
-        remote_src: true
-        creates: /usr/local/bin/eza
+            - name: Install eza
+              ansible.builtin.unarchive:
+                  src: /tmp/eza.tar.gz
+                  dest: /usr/local/bin
+                  remote_src: true
+                  creates: /usr/local/bin/eza
 
-    - name: Ensure eza binary permissions
-      ansible.builtin.file:
-        path: /usr/local/bin/eza
-        mode: "0755"
+            - name: Ensure eza binary permissions
+              ansible.builtin.file:
+                  path: /usr/local/bin/eza
+                  mode: "0755"
 
-    - name: Clean up eza tarball
-      ansible.builtin.file:
-        path: /tmp/eza.tar.gz
-        state: absent
+            - name: Clean up eza tarball
+              ansible.builtin.file:
+                  path: /tmp/eza.tar.gz
+                  state: absent
 
-    - name: Fetch latest Anytype release metadata
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
-        return_content: true
-      register: anytype_release
-      when: install_anytype_rpm | bool
+            - name: Fetch latest Anytype release metadata
+              ansible.builtin.uri:
+                  url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
+                  return_content: true
+              register: anytype_release
+              when: install_anytype_rpm | bool
 
-    - name: Select Anytype RPM asset
-      ansible.builtin.set_fact:
-        anytype_rpm_url: "{{ item.browser_download_url }}"
-      loop: "{{ anytype_release.json.assets }}"
-      when:
-        - install_anytype_rpm | bool
-        - anytype_release is defined
-        - item.name is regex('x86_64.*\\.rpm$')
-        - anytype_rpm_url is not defined
+            - name: Select Anytype RPM asset
+              ansible.builtin.set_fact:
+                  anytype_rpm_url: "{{ item.browser_download_url }}"
+              loop: "{{ anytype_release.json.assets }}"
+              when:
+                  - install_anytype_rpm | bool
+                  - anytype_release is defined
+                  - item.name is regex('x86_64.*\\.rpm$')
+                  - anytype_rpm_url is not defined
 
-    - name: Fail if Anytype RPM asset not found
-      ansible.builtin.fail:
-        msg: "Anytype RPM asset not found in latest GitHub release."
-      when:
-        - install_anytype_rpm | bool
-        - anytype_rpm_url is not defined
+            - name: Fail if Anytype RPM asset not found
+              ansible.builtin.fail:
+                  msg: "Anytype RPM asset not found in latest GitHub release."
+              when:
+                  - install_anytype_rpm | bool
+                  - anytype_rpm_url is not defined
 
-    - name: Install Anytype RPM
-      ansible.builtin.dnf:
-        name: "{{ anytype_rpm_url }}"
-        state: present
-      when:
-        - install_anytype_rpm | bool
-        - anytype_rpm_url is defined
+            - name: Install Anytype RPM
+              ansible.builtin.dnf:
+                  name: "{{ anytype_rpm_url }}"
+                  state: present
+              when:
+                  - install_anytype_rpm | bool
+                  - anytype_rpm_url is defined
 
       - name: Configure VS Code repository
         ansible.builtin.yum_repository:
@@ -305,10 +309,17 @@
         creates: "{{ dotfiles_user_home }}/.bun/bin/bun"
       become: false
 
-    - name: Install OpenCode (Bun)
+    - name: Install Bun global tools
       ansible.builtin.command:
-        cmd: "{{ dotfiles_user_home }}/.bun/bin/bun add -g opencode-ai"
-        creates: "{{ dotfiles_user_home }}/.bun/bin/opencode"
+        cmd: "{{ dotfiles_user_home }}/.bun/bin/bun add -g {{ item.name }}"
+        creates: "{{ dotfiles_user_home }}/.bun/bin/{{ item.binary }}"
+      loop:
+        - name: opencode-ai
+          binary: opencode
+        - name: prettier
+          binary: prettier
+      loop_control:
+        label: "{{ item.name }}"
       become: false
 
       - name: Add Flathub remote
@@ -338,42 +349,44 @@
             state: present
         when: install_youtube_music_rpm | bool
 
-      - name: Announce window manager setup
-        ansible.builtin.debug:
-            msg: "Window manager: Niri + Dank Material Shell"
-        changed_when: false
-
-      - name: Enable DMS COPR repo
-        ansible.builtin.command:
-            cmd: "dnf -y copr enable {{ dms_copr_repo }}"
-            creates: "{{ dms_copr_repo_file }}"
-
       - name: Install Niri + DMS
-        ansible.builtin.dnf:
-            name:
-                - niri
-                - dms
-            state: present
+        block:
+            - name: Announce window manager setup
+              ansible.builtin.debug:
+                  msg: "Window manager: Niri + Dank Material Shell"
+              changed_when: false
 
-      - name: Ensure user systemd wants directory
-        ansible.builtin.file:
-            path: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants"
-            state: directory
-            mode: "0755"
-        become: false
+            - name: Enable DMS COPR repo
+              ansible.builtin.command:
+                  cmd: "dnf -y copr enable {{ dms_copr_repo }}"
+                  creates: "{{ dms_copr_repo_file }}"
 
-      - name: Check for DMS user service
-        ansible.builtin.stat:
-            path: /usr/lib/systemd/user/dms.service
-        register: dms_service
+            - name: Install Niri + DMS
+              ansible.builtin.dnf:
+                  name:
+                      - niri
+                      - dms
+                  state: present
 
-      - name: Link DMS to Niri wants
-        ansible.builtin.file:
-            src: /usr/lib/systemd/user/dms.service
-            dest: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants/dms.service"
-            state: link
-        when: dms_service.stat.exists
-        become: false
+            - name: Ensure user systemd wants directory
+              ansible.builtin.file:
+                  path: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants"
+                  state: directory
+                  mode: "0755"
+              become: false
+
+            - name: Check for DMS user service
+              ansible.builtin.stat:
+                  path: /usr/lib/systemd/user/dms.service
+              register: dms_service
+
+            - name: Link DMS to Niri wants
+              ansible.builtin.file:
+                  src: /usr/lib/systemd/user/dms.service
+                  dest: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants/dms.service"
+                  state: link
+              when: dms_service.stat.exists
+              become: false
 
       - name: Announce font setup
         ansible.builtin.debug:
