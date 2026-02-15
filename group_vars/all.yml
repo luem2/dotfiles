@@ -37,6 +37,7 @@ base_packages:
     - eza
     - shellcheck
     - wl-clipboard
+    - rbw
     - flatpak
     - fontconfig
     - dnf-plugins-core
