@@ -1,0 +1,9 @@
+RCS
+CVS
+\.svn
+\.git
+\.gitignore
+\.gitmodules
+\.stow-local-ignore
+\.config/DankMaterialShell/\.changelog-.*
+\.config/DankMaterialShell/\.firstlaunch
