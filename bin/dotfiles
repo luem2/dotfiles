@@ -43,8 +43,16 @@ log_error() { printf "%b\n" "${RED}${ICON_ERROR}${RESET} ${RED}[ERROR]${RESET} $
 log_prompt() { printf "%b" "${BOLD}${YELLOW}${ICON_PROMPT}${RESET} ${BOLD}${YELLOW}[INPUT]${RESET} $*"; }
 die() { log_error "$*"; exit 1; }
 
+SUDO_PASS=""
+
 require_sudo() {
-  if ! sudo -v; then
+  if [ -z "$SUDO_PASS" ]; then
+    log_prompt "Sudo password: "
+    read -r -s SUDO_PASS
+    echo
+  fi
+
+  if ! echo "$SUDO_PASS" | sudo -S -v >/dev/null 2>&1; then
     die "sudo authentication failed. Aborting."
   fi
 }
@@ -57,7 +65,7 @@ ensure_dnf() {
 
 ensure_base_packages() {
   log_info "Installing base packages"
-  sudo dnf install -y git curl jq unzip ansible stow
+  echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
 ensure_bitwarden() {
@@ -249,7 +257,7 @@ prepare_ssh_config_for_stow() {
 
 run_ansible() {
   log_info "Running Ansible playbook"
-  ANSIBLE_FORCE_COLOR=1 ansible-playbook -K -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
+  ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
 }
 
 prompt_value() {
@@ -330,6 +338,7 @@ main() {
   ensure_gitconfig_local
   run_ansible
   run_stow
+  unset SUDO_PASS
 }
 
 main "$@"
