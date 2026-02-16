@@ -111,6 +111,7 @@ greetd_packages:
     - dms-greeter
 
 install_greetd_if_no_dm: true
+force_greetd: true
 
 core_services:
     - firewalld

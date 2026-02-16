@@ -282,13 +282,13 @@
         ansible.builtin.set_fact:
             has_display_manager: "{{ 'display-manager.service' in ansible_facts.services }}"
 
-      - name: Install greetd packages when no display manager exists
+      - name: Install greetd packages
         ansible.builtin.dnf:
             name: "{{ greetd_packages }}"
             state: present
         when:
             - install_greetd_if_no_dm | bool
-            - not has_display_manager
+            - force_greetd | bool or not has_display_manager
 
       - name: Configure greetd for Niri
         ansible.builtin.copy:
@@ -303,7 +303,7 @@
                 user = "greeter"
         when:
             - install_greetd_if_no_dm | bool
-            - not has_display_manager
+            - force_greetd | bool or not has_display_manager
 
       - name: Configure greetd Niri session
         ansible.builtin.copy:
@@ -315,14 +315,14 @@
                 }
         when:
             - install_greetd_if_no_dm | bool
-            - not has_display_manager
+            - force_greetd | bool or not has_display_manager
 
       - name: Ensure graphical target is default when greetd is used
         ansible.builtin.command: systemctl set-default graphical.target
         changed_when: false
         when:
             - install_greetd_if_no_dm | bool
-            - not has_display_manager
+            - force_greetd | bool or not has_display_manager
 
       - name: Enable and start greetd when installed
         ansible.builtin.systemd:
@@ -331,7 +331,16 @@
             state: started
         when:
             - install_greetd_if_no_dm | bool
-            - not has_display_manager
+            - force_greetd | bool or not has_display_manager
+
+      - name: Disable existing display manager when greetd is forced
+        ansible.builtin.systemd:
+            name: display-manager
+            enabled: false
+            state: stopped
+        when:
+            - force_greetd | bool
+            - has_display_manager | bool
 
       - name: Enable and start libvirtd
         ansible.builtin.systemd:
