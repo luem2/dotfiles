@@ -211,16 +211,11 @@
             state: absent
 
       - name: Fetch latest Anytype release metadata
+      - name: Fetch latest Anytype release metadata
         ansible.builtin.uri:
             url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
             return_content: true
             status_code: 200
-            headers: >-
-                {{
-                  {'Accept': 'application/vnd.github+json'}
-                  | combine(anytype_github_token | length > 0
-                    | ternary({'Authorization': 'Bearer ' ~ anytype_github_token}, {}))
-                }}
         register: anytype_release
         when:
             - install_anytype_rpm | bool
