@@ -221,11 +221,11 @@
                   | combine(anytype_github_token | length > 0
                     | ternary({'Authorization': 'Bearer ' ~ anytype_github_token}, {}))
                 }}
-      register: anytype_release
-      when:
-          - install_anytype_rpm | bool
-          - anytype_rpm_url | length == 0
-      failed_when: false
+        register: anytype_release
+        when:
+            - install_anytype_rpm | bool
+            - anytype_rpm_url | length == 0
+        failed_when: false
 
       - name: Debug Anytype release assets
         ansible.builtin.debug:
@@ -240,11 +240,11 @@
             anytype_rpm_url: "{{ item.browser_download_url }}"
         loop: "{{ anytype_release.json.assets }}"
         when:
-          - install_anytype_rpm | bool
-          - anytype_release is defined
-          - anytype_release.status == 200
-          - item.name is regex('.*\\.x86_64\\.rpm$')
-          - anytype_rpm_url is not defined
+            - install_anytype_rpm | bool
+            - anytype_release is defined
+            - anytype_release.status == 200
+            - item.name is regex('.*\\.x86_64\\.rpm$')
+            - anytype_rpm_url is not defined
 
       - name: Skip Anytype install when RPM asset is missing
         ansible.builtin.debug:
