@@ -136,6 +136,7 @@ starship_copr_repo: atim/starship
 starship_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
 
 install_anytype_rpm: true
+anytype_rpm_url: ""
 
 install_steam: false
 gaming_packages:

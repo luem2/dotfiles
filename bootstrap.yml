@@ -215,7 +215,9 @@
             url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
             return_content: true
         register: anytype_release
-        when: install_anytype_rpm | bool
+        when:
+            - install_anytype_rpm | bool
+            - anytype_rpm_url | length == 0
 
       - name: Select Anytype RPM asset
         ansible.builtin.set_fact:
@@ -224,7 +226,7 @@
         when:
             - install_anytype_rpm | bool
             - anytype_release is defined
-            - item.name is regex('x86_64.*\\.rpm$')
+            - item.name is regex('.*\\.x86_64\\.rpm$')
             - anytype_rpm_url is not defined
 
       - name: Fail if Anytype RPM asset not found
@@ -232,7 +234,7 @@
             msg: "Anytype RPM asset not found in latest GitHub release."
         when:
             - install_anytype_rpm | bool
-            - anytype_rpm_url is not defined
+            - anytype_rpm_url is not defined or anytype_rpm_url | length == 0
 
       - name: Install Anytype RPM
         ansible.builtin.dnf:
