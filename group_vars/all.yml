@@ -90,10 +90,12 @@ go_tools:
       module: github.com/air-verse/air@latest
       binary: air
 
-cargo_tools:
-    - name: yazi
-      crate: yazi-fm
-      binary: yazi
+yazi_copr_repo: lihaohong/yazi
+yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
+
+
+yazi_copr_repo: lihaohong/yazi
+yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
 
 virtualization_packages:
     - qemu-kvm

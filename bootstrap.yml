@@ -363,14 +363,15 @@
             label: "{{ item.name }}"
         become: false
 
-      - name: Install Cargo developer tools
+      - name: Enable yazi COPR repo
         ansible.builtin.command:
-            cmd: "cargo install {{ item.crate }}"
-            creates: "{{ dotfiles_user_home }}/.cargo/bin/{{ item.binary }}"
-        loop: "{{ cargo_tools }}"
-        loop_control:
-            label: "{{ item.name }}"
-        become: false
+            cmd: "dnf -y copr enable {{ yazi_copr_repo }}"
+            creates: "{{ yazi_copr_repo_file }}"
+
+      - name: Install yazi
+        ansible.builtin.dnf:
+            name: yazi
+            state: present
 
       - name: Install fnm
         ansible.builtin.shell: "curl -fsSL https://fnm.vercel.app/install | bash"
