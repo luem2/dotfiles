@@ -211,7 +211,6 @@
             state: absent
 
       - name: Fetch latest Anytype release metadata
-      - name: Fetch latest Anytype release metadata
         ansible.builtin.uri:
             url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
             return_content: true
