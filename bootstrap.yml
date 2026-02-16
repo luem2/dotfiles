@@ -144,6 +144,13 @@
                   mode: "0755"
               become: false
 
+            - name: Ensure user state directory
+              ansible.builtin.file:
+                  path: "{{ dotfiles_user_home }}/.local/state"
+                  state: directory
+                  mode: "0755"
+              become: false
+
             - name: Install danksearch user service
               ansible.builtin.copy:
                   dest: "{{ dotfiles_user_home }}/.config/systemd/user/danksearch-install.service"
@@ -311,7 +318,7 @@
             mode: "0644"
             content: |
                 environment {
-                    DMS_RUN_GREETER = "1"
+                    DMS_RUN_GREETER "1"
                 }
         when:
             - install_greetd_if_no_dm | bool
