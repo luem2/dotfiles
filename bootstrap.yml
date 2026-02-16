@@ -73,15 +73,24 @@
             name: "{{ base_packages_gui }}"
             state: present
 
-      - name: Enable pipes.sh COPR repo
-        ansible.builtin.command:
-            cmd: "dnf -y copr enable {{ pipes_copr_repo }}"
-            creates: "{{ pipes_copr_repo_file }}"
+      - name: Install pipes.sh from source
+        block:
+            - name: Clone pipes.sh
+              ansible.builtin.git:
+                  repo: "https://github.com/pipeseroni/pipes.sh.git"
+                  dest: /tmp/pipes.sh
+                  depth: 1
 
-      - name: Install pipes.sh
-        ansible.builtin.dnf:
-            name: pipes.sh
-            state: present
+            - name: Build and install pipes.sh
+              ansible.builtin.command:
+                  cmd: make install
+                  chdir: /tmp/pipes.sh
+                  creates: /usr/local/bin/pipes.sh
+
+            - name: Clean up pipes.sh source
+              ansible.builtin.file:
+                  path: /tmp/pipes.sh
+                  state: absent
 
       - name: Enable Ghostty COPR repo
         ansible.builtin.command:
