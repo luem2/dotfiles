@@ -19,7 +19,6 @@ base_packages_core:
     - curl
     - wget
     - fastfetch
-    - neofetch
     - ripgrep
     - fd-find
     - fzf

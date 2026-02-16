@@ -48,7 +48,7 @@ SUDO_PASS=""
 require_sudo() {
   if [ -z "$SUDO_PASS" ]; then
     log_prompt "Sudo password: "
-    read -r -s SUDO_PASS
+    read -r -s SUDO_PASS </dev/tty
     echo
   fi
 
@@ -110,13 +110,13 @@ bw_login() {
     if [ -n "$client_id" ] || [ -n "$client_secret" ]; then
       if [ -z "$client_id" ]; then
         log_prompt "Bitwarden client_id: "
-        read -r -s client_id
+        read -r -s client_id </dev/tty
         echo
       fi
 
       if [ -z "$client_secret" ]; then
         log_prompt "Bitwarden client_secret: "
-        read -r -s client_secret
+        read -r -s client_secret </dev/tty
         echo
       fi
 
@@ -149,7 +149,7 @@ bw_unlock() {
     password="${BW_PASSWORD:-}"
     if [ -z "$password" ]; then
       log_prompt "Bitwarden master password: "
-      read -r -s password
+      read -r -s password </dev/tty
       echo
     fi
 
@@ -263,11 +263,11 @@ prompt_value() {
   while true; do
     if [ -n "$default" ]; then
       log_prompt "$prompt [$default]: "
-      read -r value
+      read -r value </dev/tty
       value="${value:-$default}"
     else
       log_prompt "$prompt: "
-      read -r value
+      read -r value </dev/tty
     fi
 
     if [ -n "$value" ]; then
@@ -336,7 +336,7 @@ main() {
   unset SUDO_PASS
   log_ok "Dotfiles applied successfully."
   log_info "Rebooting in 10 seconds. Press any key to reboot now, or press 'c' to cancel."
-  if read -r -n 1 -t 10 key; then
+  if read -r -n 1 -t 10 key </dev/tty; then
     if [ "$key" = "c" ] || [ "$key" = "C" ]; then
       log_warn "Reboot cancelled."
       return 0
