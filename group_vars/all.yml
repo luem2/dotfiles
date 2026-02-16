@@ -93,10 +93,6 @@ go_tools:
 yazi_copr_repo: lihaohong/yazi
 yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
 
-
-yazi_copr_repo: lihaohong/yazi
-yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
-
 virtualization_packages:
     - qemu-kvm
     - libvirt

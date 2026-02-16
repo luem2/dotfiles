@@ -416,6 +416,7 @@
         ansible.builtin.dnf:
             name: "{{ youtube_music_rpm_url }}"
             state: present
+            disable_gpg_check: true
         when: install_youtube_music_rpm | bool
 
       - name: Announce window manager setup
