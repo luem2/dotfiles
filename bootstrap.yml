@@ -7,6 +7,7 @@
       ansible_callback_whitelist: profile_tasks
       dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
       dotfiles_user_name: "{{ lookup('env', 'USER') }}"
+      dotfiles_user_uid: "{{ lookup('ansible.builtin.pipe', 'id -u ' ~ dotfiles_user_name) }}"
       dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
       dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
       dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"
@@ -109,33 +110,65 @@
 
       - name: Install Dank Search from source
         block:
+            - name: Ensure local source directory
+              ansible.builtin.file:
+                  path: "{{ dotfiles_user_home }}/.local/src"
+                  state: directory
+                  mode: "0755"
+              become: false
+
             - name: Clone danksearch
               ansible.builtin.git:
                   repo: "https://github.com/AvengeMedia/danksearch.git"
-                  dest: /tmp/danksearch
+                  dest: "{{ dotfiles_user_home }}/.local/src/danksearch"
                   depth: 1
+              become: false
 
             - name: Build danksearch
               ansible.builtin.command:
                   cmd: make
-                  chdir: /tmp/danksearch
-                  creates: /tmp/danksearch/dsearch
+                  chdir: "{{ dotfiles_user_home }}/.local/src/danksearch"
+                  creates: "{{ dotfiles_user_home }}/.local/src/danksearch/dsearch"
+              become: false
 
             - name: Install danksearch binary
               ansible.builtin.command:
                   cmd: make install
-                  chdir: /tmp/danksearch
+                  chdir: "{{ dotfiles_user_home }}/.local/src/danksearch"
                   creates: /usr/local/bin/dsearch
 
-            - name: Install danksearch service
-              ansible.builtin.command:
-                  cmd: make install-service
-                  chdir: /tmp/danksearch
-
-            - name: Clean up danksearch source
+            - name: Ensure user systemd directory
               ansible.builtin.file:
-                  path: /tmp/danksearch
-                  state: absent
+                  path: "{{ dotfiles_user_home }}/.config/systemd/user"
+                  state: directory
+                  mode: "0755"
+              become: false
+
+            - name: Install danksearch user service
+              ansible.builtin.copy:
+                  dest: "{{ dotfiles_user_home }}/.config/systemd/user/danksearch-install.service"
+                  mode: "0644"
+                  content: |
+                      [Unit]
+                      Description=Install Dank Search user service once
+                      ConditionPathExists=!%h/.local/state/danksearch-installed
+
+                      [Service]
+                      Type=oneshot
+                      ExecStart=/usr/bin/make -C %h/.local/src/danksearch install-service
+                      ExecStartPost=/usr/bin/touch %h/.local/state/danksearch-installed
+                      RemainAfterExit=no
+
+                      [Install]
+                      WantedBy=default.target
+              become: false
+
+            - name: Enable danksearch install service
+              ansible.builtin.systemd:
+                  name: danksearch-install.service
+                  enabled: true
+                  scope: user
+              become: false
 
       - name: Download eza
         ansible.builtin.get_url:
