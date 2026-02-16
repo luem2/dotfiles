@@ -7,12 +7,11 @@ DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
 
 SSH_DIR="$HOME/.ssh"
-SSH_CONFIG_DIR="$SSH_DIR/config.d"
 SSH_CONFIG_BW="$SSH_DIR/config"
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
 
-BW_ITEM_NAME="ssh-config"
-BW_ATTACHMENT_NAME="ssh_config"
+RBW_CONFIG_ITEM="ssh-config"
+RBW_KEY_SUFFIX="_SSH"
 
 if command -v tput >/dev/null 2>&1 && [ -t 1 ]; then
   BOLD="$(tput bold)"
@@ -68,18 +67,13 @@ ensure_base_packages() {
   echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
-ensure_bitwarden() {
-  if command -v bw >/dev/null 2>&1; then
+ensure_rbw() {
+  if command -v rbw >/dev/null 2>&1; then
     return 0
   fi
 
-  log_info "Installing Bitwarden CLI"
-  local tmp_dir
-  tmp_dir="$(mktemp -d)"
-  curl -fsSL -o "$tmp_dir/bw.zip" "https://bitwarden.com/download/?app=cli&platform=linux"
-  unzip -q "$tmp_dir/bw.zip" -d "$tmp_dir"
-  sudo install -m 0755 "$tmp_dir/bw" /usr/local/bin/bw
-  rm -rf "$tmp_dir"
+  log_info "Installing rbw"
+  echo "$SUDO_PASS" | sudo -S dnf install -y rbw
 }
 
 ensure_repo() {
@@ -101,146 +95,50 @@ install_dotfiles_binary() {
   fi
 }
 
-bw_login() {
-  local client_id client_secret session
-  while true; do
-    client_id="${BW_CLIENTID:-}"
-    client_secret="${BW_CLIENTSECRET:-}"
-
-    if [ -n "$client_id" ] || [ -n "$client_secret" ]; then
-      if [ -z "$client_id" ]; then
-        log_prompt "Bitwarden client_id: "
-        read -r -s client_id </dev/tty
-        echo
-      fi
-
-      if [ -z "$client_secret" ]; then
-        log_prompt "Bitwarden client_secret: "
-        read -r -s client_secret </dev/tty
-        echo
-      fi
-
-      export BW_CLIENTID="$client_id"
-      export BW_CLIENTSECRET="$client_secret"
-
-      if bw login --apikey >/dev/null; then
-        return 0
-      fi
-
-      log_warn "Bitwarden login failed. Try again."
-      unset BW_CLIENTID BW_CLIENTSECRET
-      continue
-    fi
-
-    log_info "Bitwarden login (email + password)"
-    session=$(bw login --raw || true)
-    if [ -n "$session" ]; then
-      export BW_SESSION="$session"
-      return 0
-    fi
-
-    log_warn "Bitwarden login failed. Try again."
-  done
-}
-
-bw_unlock() {
-  local password
-  while true; do
-    password="${BW_PASSWORD:-}"
-    if [ -z "$password" ]; then
-      log_prompt "Bitwarden master password: "
-      read -r -s password </dev/tty
-      echo
-    fi
-
-    export BW_PASSWORD="$password"
-    export BW_SESSION
-    BW_SESSION=$(bw unlock --passwordenv BW_PASSWORD --raw 2>/dev/null || true)
-
-    if [ -n "${BW_SESSION:-}" ]; then
-      return 0
-    fi
-
-    log_warn "Bitwarden unlock failed. Try again."
-    unset BW_PASSWORD
-  done
-}
-
-bw_status() {
-  local status_json status
-
-  if [ -n "${BW_SESSION:-}" ]; then
-    if status_json=$(bw --session "$BW_SESSION" status 2>/dev/null); then
-      status=$(echo "$status_json" | jq -r '.status')
-      echo "$status"
-      return 0
-    fi
-    unset BW_SESSION
-  fi
-
-  status_json=$(bw status 2>/dev/null || true)
-  status=$(echo "$status_json" | jq -r '.status' 2>/dev/null || true)
-  if [ -z "$status" ] || [ "$status" = "null" ]; then
-    status="unauthenticated"
-  fi
-  echo "$status"
-}
-
-ensure_bw_session() {
-  local status
-  status=$(bw_status)
-
-  if [ "$status" = "unauthenticated" ]; then
-    log_info "Logging into Bitwarden"
-    bw_login
-    status=$(bw_status)
-  fi
-
-  if [ "$status" = "locked" ] || [ -z "${BW_SESSION:-}" ]; then
-    log_info "Unlocking Bitwarden vault"
-    bw_unlock
-  fi
-
-  bw --session "$BW_SESSION" sync >/dev/null
+rbw_sync() {
+  rbw sync >/dev/null 2>&1 || rbw login
+  rbw unlock >/dev/null 2>&1 || true
 }
 
 restore_ssh_keys() {
-  log_info "Restoring SSH keys from Bitwarden"
-  mkdir -p "$SSH_DIR" "$SSH_CONFIG_DIR"
-  chmod 700 "$SSH_DIR" "$SSH_CONFIG_DIR"
+  log_info "Restoring SSH keys from Bitwarden (rbw notes)"
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
 
-  bw --session "$BW_SESSION" list items | jq -r '.[] | select(.sshKey.privateKey != null) | .id' | while read -r item_id; do
-    [ -n "$item_id" ] || continue
-    local item key_name private_key key_path
-    item=$(bw --session "$BW_SESSION" get item "$item_id")
-    key_name=$(echo "$item" | jq -r '.name' | sed 's/[^a-zA-Z0-9_-]/_/g' | sed 's/_SSH$//')
-    private_key=$(echo "$item" | jq -r '.sshKey.privateKey')
-
-    if [ -n "$private_key" ] && [ "$private_key" != "null" ]; then
-      key_path="$SSH_DIR/$key_name"
-      if [ -f "$key_path" ]; then
-        if [ ! -s "$key_path" ]; then
-          printf '%s\n' "$private_key" >"$key_path"
+  rbw ls | while read -r item_name; do
+    [ -n "$item_name" ] || continue
+    case "$item_name" in
+      *"$RBW_KEY_SUFFIX")
+        local key_name private_key key_path
+        key_name=$(printf '%s' "$item_name" | sed 's/[^a-zA-Z0-9_-]/_/g' | sed "s/${RBW_KEY_SUFFIX}$//")
+        private_key=$(rbw get --field=notes "$item_name" 2>/dev/null || true)
+        [ -n "$private_key" ] || continue
+        key_path="$SSH_DIR/$key_name"
+        if [ -f "$key_path" ]; then
+          if [ ! -s "$key_path" ]; then
+            printf '%s\n' "$private_key" >"$key_path"
+          fi
+          chmod 600 "$key_path"
+          continue
         fi
+        printf '%s\n' "$private_key" >"$key_path"
         chmod 600 "$key_path"
-        continue
-      fi
-      printf '%s\n' "$private_key" >"$key_path"
-      chmod 600 "$key_path"
-    fi
+        ;;
+      *)
+        ;;
+    esac
   done
 }
 
 restore_ssh_config() {
-  local item_id
-  item_id=$(bw --session "$BW_SESSION" list items --search "$BW_ITEM_NAME" | jq -r '.[] | select(.name == "'"$BW_ITEM_NAME"'") | .id' | head -n 1)
-
-  if [ -z "$item_id" ]; then
-    log_error "Bitwarden item '$BW_ITEM_NAME' not found."
+  log_info "Restoring SSH config from Bitwarden (rbw notes)"
+  local config_text
+  config_text=$(rbw get --field=notes "$RBW_CONFIG_ITEM" 2>/dev/null || true)
+  if [ -z "$config_text" ]; then
+    log_error "Bitwarden item '$RBW_CONFIG_ITEM' notes not found."
     return 1
   fi
-
-  bw --session "$BW_SESSION" get attachment "$BW_ATTACHMENT_NAME" --itemid "$item_id" --output "$SSH_CONFIG_BW" >/dev/null
+  printf '%s\n' "$config_text" >"$SSH_CONFIG_BW"
   chmod 600 "$SSH_CONFIG_BW"
 }
 
@@ -317,12 +215,16 @@ main() {
   require_sudo
   ensure_dnf
   ensure_base_packages
-  ensure_bitwarden
+  ensure_rbw
   ensure_repo
   install_dotfiles_binary
-  ensure_bw_session
-  restore_ssh_keys
-  restore_ssh_config
+  if [ "${SKIP_BITWARDEN:-}" = "1" ]; then
+    log_warn "Skipping Bitwarden restore (SKIP_BITWARDEN=1)"
+  else
+    rbw_sync
+    restore_ssh_keys
+    restore_ssh_config
+  fi
   ensure_gitconfig_local
   run_ansible
   run_stow

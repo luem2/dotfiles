@@ -17,9 +17,9 @@
 ## Requisitos previos
 
 - Fedora con `sudo`.
-- Bitwarden:
-  - Un item llamado `ssh-config` con un attachment `ssh_config` que contiene tu `~/.ssh/config` privado.
-  - Llaves SSH guardadas como items de tipo SSH (campo `sshKey`).
+- Bitwarden (rbw):
+  - Un item llamado `ssh-config` con el contenido de tu `~/.ssh/config` en **Notes**.
+  - Llaves SSH guardadas como **Secure Notes** con sufijo `_SSH` y la key privada en **Notes**.
 - VirtIO (Windows VMs):
   - El ISO de drivers se descarga manualmente desde https://fedorapeople.org/groups/virt/virtio-win/
 - VMs (virt-manager):

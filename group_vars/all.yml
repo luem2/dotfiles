@@ -123,8 +123,8 @@ nerd_fonts:
     - name: CascadiaCode
       url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.zip
 
-dms_copr_repo: avengemedia/dms
-dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms.repo
+dms_copr_repo: avengemedia/dms-git
+dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms-git.repo
 
 ghostty_copr_repo: scottames/ghostty
 ghostty_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
@@ -137,6 +137,7 @@ starship_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:s
 
 install_anytype_rpm: true
 anytype_rpm_url: ""
+anytype_github_token: ""
 
 install_steam: false
 gaming_packages:

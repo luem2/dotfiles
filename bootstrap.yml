@@ -214,24 +214,41 @@
         ansible.builtin.uri:
             url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
             return_content: true
-        register: anytype_release
+            status_code: 200
+            headers: >-
+                {{
+                  {'Accept': 'application/vnd.github+json'}
+                  | combine(anytype_github_token | length > 0
+                    | ternary({'Authorization': 'Bearer ' ~ anytype_github_token}, {}))
+                }}
+      register: anytype_release
+      when:
+          - install_anytype_rpm | bool
+          - anytype_rpm_url | length == 0
+      failed_when: false
+
+      - name: Debug Anytype release assets
+        ansible.builtin.debug:
+            msg: "{{ anytype_release.json.assets | map(attribute='name') | list }}"
         when:
             - install_anytype_rpm | bool
-            - anytype_rpm_url | length == 0
+            - anytype_release is defined
+            - anytype_release.status == 200
 
       - name: Select Anytype RPM asset
         ansible.builtin.set_fact:
             anytype_rpm_url: "{{ item.browser_download_url }}"
         loop: "{{ anytype_release.json.assets }}"
         when:
-            - install_anytype_rpm | bool
-            - anytype_release is defined
-            - item.name is regex('.*\\.x86_64\\.rpm$')
-            - anytype_rpm_url is not defined
+          - install_anytype_rpm | bool
+          - anytype_release is defined
+          - anytype_release.status == 200
+          - item.name is regex('.*\\.x86_64\\.rpm$')
+          - anytype_rpm_url is not defined
 
-      - name: Fail if Anytype RPM asset not found
-        ansible.builtin.fail:
-            msg: "Anytype RPM asset not found in latest GitHub release."
+      - name: Skip Anytype install when RPM asset is missing
+        ansible.builtin.debug:
+            msg: "Anytype RPM asset not found in latest GitHub release; skipping install."
         when:
             - install_anytype_rpm | bool
             - anytype_rpm_url is not defined or anytype_rpm_url | length == 0
