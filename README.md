@@ -37,7 +37,7 @@ gaming_packages:
 ## Instalación
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh | sh
+curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/dotfiles | sh
 ```
 
 ## Uso

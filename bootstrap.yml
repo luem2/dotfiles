@@ -358,6 +358,7 @@
         when:
             - force_greetd | bool
             - has_display_manager | bool
+        failed_when: false
 
       - name: Enable and start libvirtd
         ansible.builtin.systemd:

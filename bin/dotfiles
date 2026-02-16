@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_REPO_URL="https://github.com/luem2/dotfiles.git"
+DOTFILES_REPO_URL="git@github.com:luem2/dotfiles.git"
 DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
@@ -244,12 +244,6 @@ restore_ssh_config() {
   chmod 600 "$SSH_CONFIG_BW"
 }
 
-prepare_ssh_config_for_stow() {
-  if [ -f "$SSH_DIR/config" ] && [ ! -L "$SSH_DIR/config" ]; then
-    mv "$SSH_DIR/config" "$SSH_DIR/config.backup.$(date +%s)"
-  fi
-}
-
 run_ansible() {
   log_info "Running Ansible playbook"
   ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
@@ -329,7 +323,6 @@ main() {
   ensure_bw_session
   restore_ssh_keys
   restore_ssh_config
-  prepare_ssh_config_for_stow
   ensure_gitconfig_local
   run_ansible
   run_stow
