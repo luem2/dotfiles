@@ -103,14 +103,39 @@
             state: present
 
       - name: Enable Danklinux COPR repo
-        ansible.builtin.command:
-            cmd: "dnf -y copr enable {{ danklinux_copr_repo }}"
-            creates: "{{ danklinux_copr_repo_file }}"
+        ansible.builtin.debug:
+            msg: "Dank Search will be built from source"
+        changed_when: false
 
-      - name: Install Dank Search
-        ansible.builtin.dnf:
-            name: dsearch
-            state: present
+      - name: Install Dank Search from source
+        block:
+            - name: Clone danksearch
+              ansible.builtin.git:
+                  repo: "https://github.com/AvengeMedia/danksearch.git"
+                  dest: /tmp/danksearch
+                  depth: 1
+
+            - name: Build danksearch
+              ansible.builtin.command:
+                  cmd: make
+                  chdir: /tmp/danksearch
+                  creates: /tmp/danksearch/dsearch
+
+            - name: Install danksearch binary
+              ansible.builtin.command:
+                  cmd: make install
+                  chdir: /tmp/danksearch
+                  creates: /usr/local/bin/dsearch
+
+            - name: Install danksearch service
+              ansible.builtin.command:
+                  cmd: make install-service
+                  chdir: /tmp/danksearch
+
+            - name: Clean up danksearch source
+              ansible.builtin.file:
+                  path: /tmp/danksearch
+                  state: absent
 
       - name: Download eza
         ansible.builtin.get_url:

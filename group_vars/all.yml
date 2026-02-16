@@ -132,9 +132,6 @@ dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia
 ghostty_copr_repo: scottames/ghostty
 ghostty_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
 
-danklinux_copr_repo: avengemedia/danklinux
-danklinux_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:danklinux.repo
-
 install_anytype_rpm: true
 
 install_steam: false

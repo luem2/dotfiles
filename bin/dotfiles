@@ -210,6 +210,13 @@ restore_ssh_keys() {
 
     if [ -n "$private_key" ] && [ "$private_key" != "null" ]; then
       key_path="$SSH_DIR/$key_name"
+      if [ -f "$key_path" ]; then
+        if [ ! -s "$key_path" ]; then
+          printf '%s\n' "$private_key" >"$key_path"
+        fi
+        chmod 600 "$key_path"
+        continue
+      fi
       printf '%s\n' "$private_key" >"$key_path"
       chmod 600 "$key_path"
     fi
