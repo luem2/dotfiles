@@ -15,6 +15,7 @@ optional_package_groups:
 
 base_packages_core:
     - zsh
+    - fish
     - git
     - curl
     - wget

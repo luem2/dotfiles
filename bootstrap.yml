@@ -5,9 +5,9 @@
 
   vars:
       ansible_callback_whitelist: profile_tasks
-      dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
-      dotfiles_user_name: "{{ lookup('env', 'USER') }}"
-      dotfiles_user_uid: "{{ lookup('ansible.builtin.pipe', 'id -u ' ~ dotfiles_user_name) }}"
+      dotfiles_user_name: "{{ ansible_user_id }}"
+      dotfiles_user_home: "{{ ansible_user_dir }}"
+      dotfiles_user_uid: "{{ ansible_user_uid }}"
       dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
       dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
       dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"

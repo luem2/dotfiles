@@ -7,7 +7,7 @@ alias la="eza -a --icons"
 alias lt="eza --tree --icons"
 
 # Utils
-alias bat="batcat"
+alias bat="bat"
 alias cat="bat"
 alias vim="nvim"
 alias mkcd="mkdir -p"
