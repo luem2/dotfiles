@@ -14,9 +14,12 @@ optional_package_groups:
     hardware_support: "@Hardware Support"
 
 base_packages_core:
+    - zsh
     - git
     - curl
     - wget
+    - fastfetch
+    - neofetch
     - ripgrep
     - fd-find
     - fzf
@@ -90,9 +93,6 @@ go_tools:
       module: github.com/air-verse/air@latest
       binary: air
 
-yazi_copr_repo: lihaohong/yazi
-yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
-
 virtualization_packages:
     - qemu-kvm
     - libvirt
@@ -129,6 +129,12 @@ dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia
 
 ghostty_copr_repo: scottames/ghostty
 ghostty_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
+
+yazi_copr_repo: lihaohong/yazi
+yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:yazi.repo
+
+starship_copr_repo: atim/starship
+starship_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
 
 install_anytype_rpm: true
 

@@ -8,7 +8,7 @@ INSTALL_PATH="$HOME/.local/bin/dotfiles"
 
 SSH_DIR="$HOME/.ssh"
 SSH_CONFIG_DIR="$SSH_DIR/config.d"
-SSH_CONFIG_BW="$SSH_CONFIG_DIR/bitwarden.conf"
+SSH_CONFIG_BW="$SSH_DIR/config"
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
 
 BW_ITEM_NAME="ssh-config"
@@ -213,7 +213,7 @@ restore_ssh_keys() {
     [ -n "$item_id" ] || continue
     local item key_name private_key key_path
     item=$(bw --session "$BW_SESSION" get item "$item_id")
-    key_name=$(echo "$item" | jq -r '.name' | sed 's/[^a-zA-Z0-9_-]/_/g')
+    key_name=$(echo "$item" | jq -r '.name' | sed 's/[^a-zA-Z0-9_-]/_/g' | sed 's/_SSH$//')
     private_key=$(echo "$item" | jq -r '.sshKey.privateKey')
 
     if [ -n "$private_key" ] && [ "$private_key" != "null" ]; then
@@ -246,12 +246,7 @@ restore_ssh_config() {
 
 prepare_ssh_config_for_stow() {
   if [ -f "$SSH_DIR/config" ] && [ ! -L "$SSH_DIR/config" ]; then
-    mkdir -p "$SSH_CONFIG_DIR"
-    if [ ! -f "$SSH_CONFIG_DIR/local.conf" ]; then
-      mv "$SSH_DIR/config" "$SSH_CONFIG_DIR/local.conf"
-    else
-      mv "$SSH_DIR/config" "$SSH_CONFIG_DIR/local.conf.$(date +%s)"
-    fi
+    mv "$SSH_DIR/config" "$SSH_DIR/config.backup.$(date +%s)"
   fi
 }
 
@@ -308,8 +303,8 @@ ensure_gitconfig_local() {
     log_warn "Invalid email format. Please try again."
   done
 
-  git config --file "$GITCONFIG_LOCAL_PATH" user.name "$git_name"
-  git config --file "$GITCONFIG_LOCAL_PATH" user.email "$git_email"
+  git config --file "$GITCONFIG_LOCAL_PATH" --replace-all user.name "$git_name"
+  git config --file "$GITCONFIG_LOCAL_PATH" --replace-all user.email "$git_email"
   chmod 600 "$GITCONFIG_LOCAL_PATH"
   log_ok "Generated $GITCONFIG_LOCAL_PATH"
 }

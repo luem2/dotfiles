@@ -103,6 +103,16 @@
             name: ghostty
             state: present
 
+      - name: Enable Starship COPR repo
+        ansible.builtin.command:
+            cmd: "dnf -y copr enable {{ starship_copr_repo }}"
+            creates: "{{ starship_copr_repo_file }}"
+
+      - name: Install Starship
+        ansible.builtin.dnf:
+            name: starship
+            state: present
+
       - name: Enable Danklinux COPR repo
         ansible.builtin.debug:
             msg: "Dank Search will be built from source"
@@ -362,6 +372,11 @@
                 - libvirt
                 - kvm
             append: true
+
+      - name: Set default shell to zsh
+        ansible.builtin.user:
+            name: "{{ dotfiles_user_name }}"
+            shell: /bin/zsh
 
       - name: Enable core services
         ansible.builtin.systemd:

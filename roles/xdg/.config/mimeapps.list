@@ -4,3 +4,5 @@ x-scheme-handler/https=google-chrome.desktop
 text/html=google-chrome.desktop
 x-scheme-handler/mailto=thunderbird.desktop
 inode/directory=org.gnome.Nautilus.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
