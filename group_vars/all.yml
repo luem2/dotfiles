@@ -13,12 +13,10 @@ optional_package_groups:
     multimedia: "@Multimedia"
     hardware_support: "@Hardware Support"
 
-base_packages:
+base_packages_core:
     - git
     - curl
     - wget
-    - neovim
-    - helix
     - ripgrep
     - fd-find
     - fzf
@@ -42,30 +40,36 @@ base_packages:
     - NetworkManager-openvpn
     - openvpn
     - wireguard-tools
-    - podman
-    - podman-compose
-    - golang
-    - golang-x-tools-devel
-    - delve
-    - rust
-    - cargo
-    - libreoffice
-    - thunderbird
-    - gnome-control-center
-    - gnome-software
-    - gnome-disk-utility
-    - nautilus
-    - firewalld
-    - gimp
-    - inkscape
-    - krita
     - nmap
     - dconf
     - avahi
     - nss-mdns
     - snapper
     - restic
+    - firewalld
     - cava
+
+base_packages_dev:
+    - neovim
+    - helix
+    - golang
+    - golang-x-tools-devel
+    - delve
+    - rust
+    - cargo
+    - podman
+    - podman-compose
+
+base_packages_gui:
+    - libreoffice
+    - thunderbird
+    - gnome-control-center
+    - gnome-software
+    - gnome-disk-utility
+    - nautilus
+    - gimp
+    - inkscape
+    - krita
 
 repo_packages:
     - code

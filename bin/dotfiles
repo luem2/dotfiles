@@ -242,7 +242,7 @@ prepare_ssh_config_for_stow() {
 
 run_ansible() {
   log_info "Running Ansible playbook"
-  ANSIBLE_FORCE_COLOR=1 ansible-playbook -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
+  ANSIBLE_FORCE_COLOR=1 ansible-playbook -K -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
 }
 
 prompt_value() {
