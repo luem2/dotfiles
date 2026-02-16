@@ -22,6 +22,8 @@
   - Llaves SSH guardadas como items de tipo SSH (campo `sshKey`).
 - VirtIO (Windows VMs):
   - El ISO de drivers se descarga manualmente desde https://fedorapeople.org/groups/virt/virtio-win/
+- VMs (virt-manager):
+  - Habilita 3D acceleration y OpenGL en el dispositivo de video (SPICE/Virtio) para que Niri arranque.
 - Opcional: archivo local con flags en `~/.config/dotfiles/vars.yml`.
 
 Ejemplo de `~/.config/dotfiles/vars.yml`:
@@ -35,7 +37,11 @@ gaming_packages:
 ## Instalación
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh)"
+curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh | sh
+
+# Alternativa (descarga y ejecuta)
+curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/setup.sh -o /tmp/dotfiles-setup.sh
+bash /tmp/dotfiles-setup.sh
 ```
 
 ## Uso
