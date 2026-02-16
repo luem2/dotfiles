@@ -477,8 +477,6 @@
             url: "{{ item.url }}"
             dest: "{{ dotfiles_fonts_cache_dir }}/{{ item.name }}.zip"
             mode: "0644"
-            use_etag: true
-            use_last_modified: true
         register: nerd_fonts_download
         loop: "{{ nerd_fonts }}"
         loop_control:
