@@ -107,7 +107,6 @@ virtualization_packages:
     - swtpm
     - guestfs-tools
     - virt-top
-    - virtio-win
 
 greetd_packages:
     - greetd

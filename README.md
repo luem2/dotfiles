@@ -20,6 +20,8 @@
 - Bitwarden:
   - Un item llamado `ssh-config` con un attachment `ssh_config` que contiene tu `~/.ssh/config` privado.
   - Llaves SSH guardadas como items de tipo SSH (campo `sshKey`).
+- VirtIO (Windows VMs):
+  - El ISO de drivers se descarga manualmente desde https://fedorapeople.org/groups/virt/virtio-win/
 - Opcional: archivo local con flags en `~/.config/dotfiles/vars.yml`.
 
 Ejemplo de `~/.config/dotfiles/vars.yml`:
