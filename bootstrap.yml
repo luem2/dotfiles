@@ -5,9 +5,8 @@
 
   vars:
       ansible_callback_whitelist: profile_tasks
-      dotfiles_user_name: "{{ ansible_user_id }}"
-      dotfiles_user_home: "{{ ansible_user_dir }}"
-      dotfiles_user_uid: "{{ ansible_user_uid }}"
+      dotfiles_user_name: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+      dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
       dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
       dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
       dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"
@@ -23,12 +22,13 @@
         ansible.builtin.stat:
             path: "{{ dotfiles_local_vars_path }}"
         register: dotfiles_local_vars
+        failed_when: false
         become: false
 
       - name: Load local overrides
         ansible.builtin.include_vars:
             file: "{{ dotfiles_local_vars_path }}"
-        when: dotfiles_local_vars.stat.exists
+        when: dotfiles_local_vars.stat is defined and dotfiles_local_vars.stat.exists
         become: false
 
   tasks:

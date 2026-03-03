@@ -132,20 +132,20 @@ ensure_gitconfig_local() {
   fi
 
   log_info "Configuring Git identity"
-  log_prompt "Please enter your Git user.name and user.email."
-  echo
   local current_name current_email git_name git_email
   current_name="$(git config --global --get user.name 2>/dev/null || true)"
   current_email="$(git config --global --get user.email 2>/dev/null || true)"
 
+  log_info "Step 1/2: Enter your Git username (user.name). Example: John Doe"
   git_name="$(prompt_value "Git user.name" "${local_name:-${current_name:-$USER}}")"
 
+  log_info "Step 2/2: Enter your Git email (user.email). Example: john@company.com"
   while true; do
     git_email="$(prompt_value "Git user.email" "${local_email:-$current_email}")"
     if [[ "$git_email" == *"@"* ]]; then
       break
     fi
-    log_warn "Invalid email format. Please try again."
+    log_warn "Invalid email format. Use a valid email for Git commits (example: john@company.com)."
   done
 
   git config --file "$GITCONFIG_LOCAL_PATH" --replace-all user.name "$git_name"
