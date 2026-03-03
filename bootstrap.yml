@@ -7,7 +7,6 @@
       ansible_callback_whitelist: profile_tasks
       dotfiles_user_name: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
       dotfiles_user_home: "{{ lookup('env', 'HOME') }}"
-      dotfiles_upgrade_all_packages: true
       dotfiles_local_vars_path: "{{ dotfiles_user_home }}/.config/dotfiles/vars.yml"
       dotfiles_fonts_dir: "{{ dotfiles_user_home }}/.local/share/fonts"
       dotfiles_fonts_cache_dir: "{{ dotfiles_user_home }}/.cache/dotfiles/fonts"
@@ -42,7 +41,6 @@
         ansible.builtin.dnf:
             name: "*"
             state: latest
-        when: dotfiles_upgrade_all_packages | bool
 
       - name: Install package groups
         ansible.builtin.dnf:
@@ -290,7 +288,7 @@
                 vt = 1
 
                 [default_session]
-                command = "dms-greeter --command niri -C /etc/greetd/niri.kdl"
+                command = "dms-greeter --command /usr/bin/niri -C /etc/greetd/niri.kdl"
                 user = "greeter"
         when:
             - install_greetd_if_no_dm | bool
@@ -307,32 +305,6 @@
         when:
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
-
-      - name: Ensure graphical target is default when greetd is used
-        ansible.builtin.command: systemctl set-default graphical.target
-        changed_when: false
-        when:
-            - install_greetd_if_no_dm | bool
-            - force_greetd | bool or not has_display_manager
-
-      - name: Enable and start greetd when installed
-        ansible.builtin.systemd:
-            name: greetd
-            enabled: true
-            state: started
-        when:
-            - install_greetd_if_no_dm | bool
-            - force_greetd | bool or not has_display_manager
-
-      - name: Disable existing display manager when greetd is forced
-        ansible.builtin.systemd:
-            name: display-manager
-            enabled: false
-            state: stopped
-        when:
-            - force_greetd | bool
-            - has_display_manager | bool
-        failed_when: false
 
       - name: Enable and start libvirtd
         ansible.builtin.systemd:
@@ -452,6 +424,49 @@
                 - niri
                 - dms
             state: present
+
+      - name: Check Niri binary is installed
+        ansible.builtin.stat:
+            path: /usr/bin/niri
+        register: niri_binary
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+
+      - name: Fail when Niri binary is missing
+        ansible.builtin.fail:
+            msg: "Niri binary not found at /usr/bin/niri after install."
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+            - not niri_binary.stat.exists
+
+      - name: Ensure graphical target is default when greetd is used
+        ansible.builtin.command: systemctl set-default graphical.target
+        changed_when: false
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+
+      - name: Enable and start greetd when installed
+        ansible.builtin.systemd:
+            name: greetd
+            enabled: true
+            state: started
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+            - niri_binary.stat.exists
+
+      - name: Disable existing display manager when greetd is forced
+        ansible.builtin.systemd:
+            name: display-manager
+            enabled: false
+            state: stopped
+        when:
+            - force_greetd | bool
+            - has_display_manager | bool
+        failed_when: false
 
       - name: Ensure user systemd wants directory
         ansible.builtin.file:

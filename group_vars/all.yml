@@ -129,8 +129,8 @@ nerd_fonts:
     - name: CascadiaCode
       url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.zip
 
-dms_copr_repo: avengemedia/dms-git
-dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms-git.repo
+dms_copr_repo: avengemedia/dms
+dms_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:avengemedia:dms.repo
 
 ghostty_copr_repo: scottames/ghostty
 ghostty_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo

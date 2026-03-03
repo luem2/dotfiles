@@ -6,6 +6,7 @@ DOTFILES_REPO_URL_HTTPS="https://github.com/luem2/dotfiles.git"
 DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
+GIT_SSH_NONINTERACTIVE_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o PreferredAuthentications=publickey -o ConnectTimeout=5"
 
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
 
@@ -63,21 +64,10 @@ ensure_base_packages() {
   echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
-upgrade_all_packages() {
-  log_info "Upgrading all packages with DNF (this can take several minutes)"
-  if echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh; then
-    return 0
-  fi
-
-  log_warn "DNF upgrade failed. Cleaning cache and retrying once."
-  echo "$SUDO_PASS" | sudo -S dnf clean all
-  echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh || die "DNF upgrade failed after retry. Run 'sudo dnf clean all && sudo dnf upgrade --refresh' manually."
-}
-
 ensure_repo() {
   if [ -d "$DOTFILES_DIR/.git" ]; then
     log_info "Updating dotfiles repo"
-    if ! git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
+    if ! GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
       local current_origin
       current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
       if [ "$current_origin" = "$DOTFILES_REPO_URL_SSH" ]; then
@@ -90,7 +80,7 @@ ensure_repo() {
     fi
   else
     log_info "Cloning dotfiles repo"
-    if ! git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
+    if ! GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
       log_warn "SSH clone failed, retrying with HTTPS"
       git clone --quiet "$DOTFILES_REPO_URL_HTTPS" "$DOTFILES_DIR" || die "failed to clone dotfiles repo"
     fi
@@ -108,7 +98,7 @@ install_dotfiles_binary() {
 
 run_ansible() {
   log_info "Running Ansible playbook"
-  ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local -e dotfiles_upgrade_all_packages=false "$DOTFILES_DIR/bootstrap.yml"
+  ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
 }
 
 prompt_value() {
@@ -179,7 +169,6 @@ main() {
   require_sudo
   ensure_dnf
   ensure_base_packages
-  upgrade_all_packages
   ensure_repo
   install_dotfiles_binary
   ensure_gitconfig_local
