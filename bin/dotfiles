@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_REPO_URL="git@github.com:luem2/dotfiles.git"
+DOTFILES_REPO_URL_SSH="git@github.com:luem2/dotfiles.git"
+DOTFILES_REPO_URL_HTTPS="https://github.com/luem2/dotfiles.git"
 DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
@@ -65,10 +66,23 @@ ensure_base_packages() {
 ensure_repo() {
   if [ -d "$DOTFILES_DIR/.git" ]; then
     log_info "Updating dotfiles repo"
-    git -C "$DOTFILES_DIR" pull --quiet --ff-only
+    if ! git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
+      local current_origin
+      current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
+      if [ "$current_origin" = "$DOTFILES_REPO_URL_SSH" ]; then
+        log_warn "SSH pull failed, switching origin to HTTPS and retrying"
+        git -C "$DOTFILES_DIR" remote set-url origin "$DOTFILES_REPO_URL_HTTPS"
+        git -C "$DOTFILES_DIR" pull --quiet --ff-only || die "failed to update dotfiles repo via HTTPS"
+      else
+        die "failed to update dotfiles repo"
+      fi
+    fi
   else
     log_info "Cloning dotfiles repo"
-    git clone --quiet "$DOTFILES_REPO_URL" "$DOTFILES_DIR"
+    if ! git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
+      log_warn "SSH clone failed, retrying with HTTPS"
+      git clone --quiet "$DOTFILES_REPO_URL_HTTPS" "$DOTFILES_DIR" || die "failed to clone dotfiles repo"
+    fi
   fi
 }
 
