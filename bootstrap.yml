@@ -210,52 +210,6 @@
             path: /tmp/eza.tar.gz
             state: absent
 
-      - name: Fetch latest Anytype release metadata
-        ansible.builtin.uri:
-            url: "https://api.github.com/repos/anyproto/anytype-ts/releases/latest"
-            return_content: true
-            status_code: 200
-        register: anytype_release
-        when:
-            - install_anytype_rpm | bool
-            - anytype_rpm_url | length == 0
-        failed_when: false
-
-      - name: Debug Anytype release assets
-        ansible.builtin.debug:
-            msg: "{{ anytype_release.json.assets | map(attribute='name') | list }}"
-        when:
-            - install_anytype_rpm | bool
-            - anytype_release is defined
-            - anytype_release.status == 200
-
-      - name: Select Anytype RPM asset
-        ansible.builtin.set_fact:
-            anytype_rpm_url: "{{ item.browser_download_url }}"
-        loop: "{{ anytype_release.json.assets }}"
-        when:
-            - install_anytype_rpm | bool
-            - anytype_release is defined
-            - anytype_release.status == 200
-            - item.name is regex('.*\\.x86_64\\.rpm$')
-            - anytype_rpm_url is not defined
-
-      - name: Skip Anytype install when RPM asset is missing
-        ansible.builtin.debug:
-            msg: "Anytype RPM asset not found in latest GitHub release; skipping install."
-        when:
-            - install_anytype_rpm | bool
-            - anytype_rpm_url is not defined or anytype_rpm_url | length == 0
-
-      - name: Install Anytype RPM
-        ansible.builtin.dnf:
-            name: "{{ anytype_rpm_url }}"
-            state: present
-            disable_gpg_check: true
-        when:
-            - install_anytype_rpm | bool
-            - anytype_rpm_url is defined
-
       - name: Configure VS Code repository
         ansible.builtin.yum_repository:
             name: vscode
@@ -455,14 +409,30 @@
         register: flatpak_remove_ytm
         changed_when: "'not installed' not in (flatpak_remove_ytm.stdout | lower) and 'not installed' not in (flatpak_remove_ytm.stderr | lower)"
         failed_when: false
-        when: install_youtube_music_rpm | bool
 
-      - name: Install YouTube Music (Pear Desktop) RPM
-        ansible.builtin.dnf:
-            name: "{{ youtube_music_rpm_url }}"
-            state: present
-            disable_gpg_check: true
-        when: install_youtube_music_rpm | bool
+      - name: Ensure local applications directory for webapps
+        ansible.builtin.file:
+            path: "{{ dotfiles_user_home }}/.local/share/applications"
+            state: directory
+            mode: "0755"
+        become: false
+
+      - name: Install YouTube Music webapp launcher
+        ansible.builtin.copy:
+            dest: "{{ dotfiles_user_home }}/.local/share/applications/{{ youtube_music_webapp_desktop_file }}"
+            mode: "0644"
+            content: |
+                [Desktop Entry]
+                Version=1.0
+                Type=Application
+                Name={{ youtube_music_webapp_name }}
+                Comment=YouTube Music Web App
+                Exec={{ youtube_music_webapp_browser_cmd }} --app={{ youtube_music_webapp_url }}
+                Terminal=false
+                Categories=AudioVideo;Music;Network;
+                StartupNotify=true
+                Icon={{ youtube_music_webapp_icon }}
+        become: false
 
       - name: Announce window manager setup
         ansible.builtin.debug:

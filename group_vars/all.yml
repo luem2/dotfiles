@@ -36,7 +36,7 @@ base_packages_core:
     - zoxide
     - shellcheck
     - wl-clipboard
-    - rbw
+    - keepassxc
     - flatpak
     - fontconfig
     - dnf-plugins-core
@@ -51,6 +51,7 @@ base_packages_core:
     - restic
     - firewalld
     - cava
+    - syncthing
 
 base_packages_dev:
     - neovim
@@ -84,9 +85,13 @@ flatpak_apps:
     - org.localsend.localsend_app
     - com.discordapp.Discord
     - com.slack.Slack
+    - md.obsidian.Obsidian
 
-install_youtube_music_rpm: true
-youtube_music_rpm_url: "https://github.com/pear-devs/pear-desktop/releases/download/v3.11.0/youtube-music-3.11.0.x86_64.rpm"
+youtube_music_webapp_name: "YouTube Music"
+youtube_music_webapp_url: "https://music.youtube.com/"
+youtube_music_webapp_browser_cmd: "/usr/bin/google-chrome-stable"
+youtube_music_webapp_desktop_file: "youtube-music-webapp.desktop"
+youtube_music_webapp_icon: "youtube-music"
 
 go_tools:
     - name: air
@@ -135,9 +140,6 @@ yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:
 
 starship_copr_repo: atim/starship
 starship_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
-
-install_anytype_rpm: true
-anytype_rpm_url: ""
 
 install_steam: false
 gaming_packages:
