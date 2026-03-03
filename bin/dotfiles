@@ -63,6 +63,11 @@ ensure_base_packages() {
   echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
+upgrade_all_packages() {
+  log_info "Upgrading all packages with DNF (this can take several minutes)"
+  echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh
+}
+
 ensure_repo() {
   if [ -d "$DOTFILES_DIR/.git" ]; then
     log_info "Updating dotfiles repo"
@@ -97,7 +102,7 @@ install_dotfiles_binary() {
 
 run_ansible() {
   log_info "Running Ansible playbook"
-  ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local "$DOTFILES_DIR/bootstrap.yml"
+  ANSIBLE_FORCE_COLOR=1 ANSIBLE_BECOME_PASS="$SUDO_PASS" ansible-playbook -v -i localhost, -c local -e dotfiles_upgrade_all_packages=false "$DOTFILES_DIR/bootstrap.yml"
 }
 
 prompt_value() {
@@ -168,6 +173,7 @@ main() {
   require_sudo
   ensure_dnf
   ensure_base_packages
+  upgrade_all_packages
   ensure_repo
   install_dotfiles_binary
   ensure_gitconfig_local
