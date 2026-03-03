@@ -268,6 +268,11 @@
         ansible.builtin.set_fact:
             has_display_manager: "{{ 'display-manager.service' in ansible_facts.services }}"
 
+      - name: Enable DMS COPR repo
+        ansible.builtin.command:
+            cmd: "dnf -y copr enable {{ dms_copr_repo }}"
+            creates: "{{ dms_copr_repo_file }}"
+
       - name: Install greetd packages
         ansible.builtin.dnf:
             name: "{{ greetd_packages }}"
@@ -440,11 +445,6 @@
         ansible.builtin.debug:
             msg: "Window manager: Niri + Dank Material Shell"
         changed_when: false
-
-      - name: Enable DMS COPR repo
-        ansible.builtin.command:
-            cmd: "dnf -y copr enable {{ dms_copr_repo }}"
-            creates: "{{ dms_copr_repo_file }}"
 
       - name: Install Niri + DMS
         ansible.builtin.dnf:
