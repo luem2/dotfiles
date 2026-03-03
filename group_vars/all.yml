@@ -91,7 +91,8 @@ youtube_music_webapp_name: "YouTube Music"
 youtube_music_webapp_url: "https://music.youtube.com/"
 youtube_music_webapp_browser_cmd: "/usr/bin/google-chrome-stable"
 youtube_music_webapp_desktop_file: "youtube-music-webapp.desktop"
-youtube_music_webapp_icon: "youtube-music"
+youtube_music_webapp_icon_file: "youtube-music.png"
+youtube_music_webapp_icon_url: "https://www.google.com/s2/favicons?domain=music.youtube.com&sz=256"
 
 go_tools:
     - name: air

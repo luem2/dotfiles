@@ -332,6 +332,12 @@
             state: started
         loop: "{{ core_services }}"
 
+      - name: Enable and start Syncthing daemon
+        ansible.builtin.systemd:
+            name: "syncthing@{{ dotfiles_user_name }}"
+            enabled: true
+            state: started
+
       - name: Install Go developer tools
         ansible.builtin.command:
             cmd: "go install {{ item.module }}"
@@ -396,6 +402,25 @@
             mode: "0755"
         become: false
 
+      - name: Remove Syncthing start launcher from applications
+        ansible.builtin.file:
+            path: /usr/share/applications/syncthing-start.desktop
+            state: absent
+
+      - name: Ensure local icon directory for YouTube Music webapp
+        ansible.builtin.file:
+            path: "{{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps"
+            state: directory
+            mode: "0755"
+        become: false
+
+      - name: Download YouTube Music webapp icon
+        ansible.builtin.get_url:
+            url: "{{ youtube_music_webapp_icon_url }}"
+            dest: "{{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps/{{ youtube_music_webapp_icon_file }}"
+            mode: "0644"
+        become: false
+
       - name: Install YouTube Music webapp launcher
         ansible.builtin.copy:
             dest: "{{ dotfiles_user_home }}/.local/share/applications/{{ youtube_music_webapp_desktop_file }}"
@@ -410,7 +435,7 @@
                 Terminal=false
                 Categories=AudioVideo;Music;Network;
                 StartupNotify=true
-                Icon={{ youtube_music_webapp_icon }}
+                Icon={{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps/{{ youtube_music_webapp_icon_file }}
         become: false
 
       - name: Announce window manager setup

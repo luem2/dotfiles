@@ -175,15 +175,7 @@ main() {
   run_ansible
   run_stow
   unset SUDO_PASS
-  log_ok "Dotfiles applied successfully."
-  log_info "Rebooting in 10 seconds. Press any key to reboot now, or press 'c' to cancel."
-  if read -r -n 1 -t 10 key </dev/tty; then
-    if [ "$key" = "c" ] || [ "$key" = "C" ]; then
-      log_warn "Reboot cancelled."
-      return 0
-    fi
-  fi
-  echo "$SUDO_PASS" | sudo -S reboot
+  log_ok "Instalacion/Actualizacion del sistema exitosamente."
 }
 
 main "$@"
