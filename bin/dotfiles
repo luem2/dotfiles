@@ -65,7 +65,13 @@ ensure_base_packages() {
 
 upgrade_all_packages() {
   log_info "Upgrading all packages with DNF (this can take several minutes)"
-  echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh
+  if echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh; then
+    return 0
+  fi
+
+  log_warn "DNF upgrade failed. Cleaning cache and retrying once."
+  echo "$SUDO_PASS" | sudo -S dnf clean all
+  echo "$SUDO_PASS" | sudo -S dnf upgrade -y --refresh || die "DNF upgrade failed after retry. Run 'sudo dnf clean all && sudo dnf upgrade --refresh' manually."
 }
 
 ensure_repo() {
