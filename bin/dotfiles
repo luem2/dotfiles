@@ -9,6 +9,7 @@ INSTALL_PATH="$HOME/.local/bin/dotfiles"
 GIT_SSH_NONINTERACTIVE_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o PreferredAuthentications=publickey -o ConnectTimeout=5"
 
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
+DOTFILES_BINARY_UPDATED=0
 
 if command -v tput >/dev/null 2>&1 && [ -t 1 ]; then
   BOLD="$(tput bold)"
@@ -64,8 +65,22 @@ ensure_base_packages() {
   echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
+ssh_repo_access_ok() {
+  GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git ls-remote --exit-code "$DOTFILES_REPO_URL_SSH" HEAD >/dev/null 2>&1
+}
+
+switch_origin_to_ssh_if_available() {
+  local current_origin
+  current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
+  if [ "$current_origin" = "$DOTFILES_REPO_URL_HTTPS" ] && ssh_repo_access_ok; then
+    log_info "SSH access detected. Switching dotfiles origin to SSH."
+    git -C "$DOTFILES_DIR" remote set-url origin "$DOTFILES_REPO_URL_SSH"
+  fi
+}
+
 ensure_repo() {
   if [ -d "$DOTFILES_DIR/.git" ]; then
+    switch_origin_to_ssh_if_available
     log_info "Updating dotfiles repo"
     if ! GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
       local current_origin
@@ -92,7 +107,17 @@ install_dotfiles_binary() {
   if [ -f "$DOTFILES_DIR/bin/dotfiles" ]; then
     if [ ! -f "$INSTALL_PATH" ] || ! cmp -s "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"; then
       install -m 0755 "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"
+      DOTFILES_BINARY_UPDATED=1
     fi
+  fi
+}
+
+reexec_if_binary_updated() {
+  if [ "$DOTFILES_BINARY_UPDATED" -eq 1 ] && [ "${DOTFILES_REEXEC:-0}" != "1" ]; then
+    log_info "Relaunching dotfiles with updated launcher."
+    export DOTFILES_REEXEC=1
+    export SUDO_PASS
+    exec "$INSTALL_PATH" "$@"
   fi
 }
 
@@ -171,6 +196,7 @@ main() {
   ensure_base_packages
   ensure_repo
   install_dotfiles_binary
+  reexec_if_binary_updated "$@"
   ensure_gitconfig_local
   run_ansible
   run_stow
