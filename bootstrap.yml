@@ -363,6 +363,19 @@
             creates: "{{ dotfiles_user_home }}/.local/share/fnm/fnm"
         become: false
 
+      - name: Install Node.js LTS (fnm)
+        ansible.builtin.command:
+            cmd: "{{ dotfiles_user_home }}/.local/share/fnm/fnm install --lts --log-level quiet"
+        args:
+            creates: "{{ dotfiles_user_home }}/.local/share/fnm/aliases/lts-latest"
+        become: false
+
+      - name: Set fnm default Node to LTS
+        ansible.builtin.command:
+            cmd: "{{ dotfiles_user_home }}/.local/share/fnm/fnm default lts-latest"
+        become: false
+        changed_when: false
+
       - name: Install Bun
         ansible.builtin.shell: "curl -fsSL https://bun.sh/install | bash"
         args:
