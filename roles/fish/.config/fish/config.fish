@@ -7,7 +7,7 @@ zoxide init fish | source
 starship init fish | source
 
 # opencode
-fish_add_path /home/lucho/.opencode/bin
+fish_add_path "$HOME/.opencode/bin"
 
 alias zed zeditor
 alias bat batcat

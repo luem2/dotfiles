@@ -9,23 +9,23 @@
     {
         "bindings": {
             "ctrl-e": "workspace::ToggleRightDock",
-            "ctrl-b": "workspace::ToggleLeftDock"
-        }
+            "ctrl-b": "workspace::ToggleLeftDock",
+        },
     },
     {
-        // "context": "(Dock  Editor || ProjectPanel) && !(Picker > Editor)",
+        "context": "(Dock || Editor || ProjectPanel) && !(Picker > Editor)",
         "bindings": {
             "ctrl-h": "workspace::ActivatePaneLeft",
             "ctrl-l": "workspace::ActivatePaneRight",
+            "ctrl-j": "workspace::ActivatePaneDown",
             "ctrl-k": "workspace::ActivatePaneUp",
-            "ctrl-j": "workspace::ActivatePaneDown"
-        }
+        },
     },
     {
         "context": "Editor",
         "bindings": {
-            "ctrl-a": "editor::SelectAll"
-        }
+            "ctrl-a": "editor::SelectAll",
+        },
     },
     {
         "context": "Pane",
@@ -39,15 +39,20 @@
             "ctrl-7": ["pane::ActivateItem", 6],
             "ctrl-8": ["pane::ActivateItem", 7],
             "ctrl-9": ["pane::ActivateItem", 8],
-            "ctrl-0": "pane::ActivateLastItem"
-        }
+            "ctrl-0": "pane::ActivateLastItem",
+        },
     },
     {
-        "context": "Terminal",
+        "context": "Editor && mode == full && vim_mode == normal && !menu",
         "bindings": {
-            "ctrl-w h": "pane::SplitLeft",
-            "ctrl-w l": "pane::SplitRight",
-            "ctrl-w q": "pane::CloseActiveItem"
-        }
-    }
+            "ctrl-k": null,
+        },
+    },
+    {
+        "context": "(Editor && mode == full && vim_mode == normal && !menu) || EmptyPane",
+        "bindings": {
+            "ctrl-k ctrl-o": "workspace::Open",
+            "ctrl-o": null,
+        },
+    },
 ]
