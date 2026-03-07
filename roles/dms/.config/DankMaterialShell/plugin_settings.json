@@ -1,16 +1,12 @@
 {
-  "calculator": {
-    "enabled": true,
-    "trigger": "="
-  },
-  "dankBatteryAlerts": {
-    "enabled": true
-  },
-  "emojiLauncher": {
-    "enabled": true
-  },
-  "dockerManager": {
-    "enabled": true,
-    "groupByCompose": false
-  }
+    "calculator": {
+        "enabled": true,
+        "trigger": "="
+    },
+    "dankBatteryAlerts": {
+        "enabled": true
+    },
+    "emojiLauncher": {
+        "enabled": true
+    }
 }
