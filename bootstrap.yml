@@ -37,6 +37,15 @@
             msg: "System packages and updates"
         changed_when: false
 
+      - name: Check current system timezone
+        ansible.builtin.command: timedatectl show --property=Timezone --value
+        register: system_timezone
+        changed_when: false
+
+      - name: Set system timezone
+        ansible.builtin.command: timedatectl set-timezone America/Argentina/Buenos_Aires
+        when: system_timezone.stdout != "America/Argentina/Buenos_Aires"
+
       - name: Upgrade all packages
         ansible.builtin.dnf:
             name: "*"

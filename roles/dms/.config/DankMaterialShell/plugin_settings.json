@@ -1,12 +1,18 @@
 {
-    "calculator": {
-        "enabled": true,
-        "trigger": "="
-    },
-    "dankBatteryAlerts": {
-        "enabled": true
-    },
-    "emojiLauncher": {
-        "enabled": true
-    }
+  "calculator": {
+    "enabled": true,
+    "trigger": "="
+  },
+  "dankBatteryAlerts": {
+    "enabled": true
+  },
+  "emojiLauncher": {
+    "enabled": true
+  },
+  "dankKDEConnect": {
+    "enabled": true
+  },
+  "dankPomodoroTimer": {
+    "enabled": true
+  }
 }
