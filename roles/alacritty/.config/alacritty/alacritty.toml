@@ -1,6 +1,5 @@
-import = ["~/.config/alacritty/themes/tokyo-night.toml"]
 
-[shell]
+[terminal.shell]
 program = "/usr/bin/zsh"
 args = ["-l"]
 
@@ -35,3 +34,8 @@ vi_mode_style = "Block"
 key = "Return"
 mods = "Control|Shift"
 action = "SpawnNewInstance"
+
+[general]
+import = ["~/.config/alacritty/themes/tokyo-night.toml"]
+
+[terminal]
