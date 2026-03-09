@@ -6,7 +6,8 @@ DOTFILES_REPO_URL_HTTPS="https://github.com/luem2/dotfiles.git"
 DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
 DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
-GIT_SSH_NONINTERACTIVE_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o PreferredAuthentications=publickey -o ConnectTimeout=5"
+GITHUB_SSH_KEY_PATH="$HOME/.ssh/fedora-github"
+GIT_SSH_NONINTERACTIVE_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o PreferredAuthentications=publickey -o IdentitiesOnly=yes -o ConnectTimeout=5"
 
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
 DOTFILES_BINARY_UPDATED=0
@@ -77,8 +78,30 @@ run_dankinstall() {
   fi
 }
 
+git_ssh_command() {
+  local ssh_command="ssh $GIT_SSH_NONINTERACTIVE_OPTS"
+
+  if [ -f "$GITHUB_SSH_KEY_PATH" ]; then
+    ssh_command="$ssh_command -i $GITHUB_SSH_KEY_PATH"
+  fi
+
+  printf '%s\n' "$ssh_command"
+}
+
+ensure_github_known_host() {
+  mkdir -p "$HOME/.ssh"
+  touch "$HOME/.ssh/known_hosts"
+  chmod 700 "$HOME/.ssh"
+  chmod 600 "$HOME/.ssh/known_hosts"
+
+  if ! ssh-keygen -F github.com -f "$HOME/.ssh/known_hosts" >/dev/null 2>&1; then
+    ssh-keyscan -H github.com >>"$HOME/.ssh/known_hosts" 2>/dev/null || die "failed to add github.com to known_hosts"
+  fi
+}
+
 ssh_repo_access_ok() {
-  GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git ls-remote --exit-code "$DOTFILES_REPO_URL_SSH" HEAD >/dev/null 2>&1
+  ensure_github_known_host
+  GIT_SSH_COMMAND="$(git_ssh_command)" git ls-remote --exit-code "$DOTFILES_REPO_URL_SSH" HEAD >/dev/null 2>&1
 }
 
 switch_origin_to_ssh_if_available() {
@@ -94,7 +117,7 @@ ensure_repo() {
   if [ -d "$DOTFILES_DIR/.git" ]; then
     switch_origin_to_ssh_if_available
     log_info "Updating dotfiles repo"
-    if ! GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
+    if ! GIT_SSH_COMMAND="$(git_ssh_command)" git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
       local current_origin
       current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
       if [ "$current_origin" = "$DOTFILES_REPO_URL_SSH" ]; then
@@ -107,7 +130,8 @@ ensure_repo() {
     fi
   else
     log_info "Cloning dotfiles repo"
-    if ! GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
+    ensure_github_known_host
+    if ! GIT_SSH_COMMAND="$(git_ssh_command)" git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
       log_warn "SSH clone failed, retrying with HTTPS"
       git clone --quiet "$DOTFILES_REPO_URL_HTTPS" "$DOTFILES_DIR" || die "failed to clone dotfiles repo"
     fi

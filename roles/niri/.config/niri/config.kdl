@@ -43,8 +43,9 @@ layout {
     default-column-width { proportion 0.5; }
     focus-ring {
         width 4
-        active-color "#7fc8ff"
-        inactive-color "#505050"
+        active-color   "#707070"      // Neutral gray
+        inactive-color "#d0d0d0"      // Light gray
+        urgent-color   "#cc4444"      // Softer red
     }
     border {
         off
@@ -144,6 +145,11 @@ window-rule {
     match app-id=r#"^steam$"#
     match app-id=r#"^xdg-desktop-portal$"#
     open-floating true
+}
+window-rule {
+    match app-id=r#"^steam$"# title=r#"^notificationtoasts_\d+_desktop$"#
+    default-floating-position x=10 y=10 relative-to="bottom-right"
+    open-focused false
 }
 window-rule {
     match app-id=r#"^org\.wezfurlong\.wezterm$"#
