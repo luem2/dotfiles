@@ -456,28 +456,34 @@
             msg: "Window manager: Niri + Dank Material Shell"
         changed_when: false
 
-      - name: Install Niri + DMS
-        ansible.builtin.dnf:
-            name:
-                - niri
-                - dms
-            state: present
-
       - name: Check Niri binary is installed
         ansible.builtin.stat:
             path: /usr/bin/niri
         register: niri_binary
-        when:
-            - install_greetd_if_no_dm | bool
-            - force_greetd | bool or not has_display_manager
+
+      - name: Check DMS binary is installed
+        ansible.builtin.stat:
+            path: /usr/bin/dms
+        register: dms_binary
 
       - name: Fail when Niri binary is missing
         ansible.builtin.fail:
-            msg: "Niri binary not found at /usr/bin/niri after install."
+            msg: >-
+                Niri binary not found at /usr/bin/niri.
+                Run the official installer first:
+                curl -fsSL https://install.danklinux.com | sh
         when:
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
             - not niri_binary.stat.exists
+
+      - name: Fail when DMS binary is missing
+        ansible.builtin.fail:
+            msg: >-
+                DMS binary not found at /usr/bin/dms.
+                Run the official installer first:
+                curl -fsSL https://install.danklinux.com | sh
+        when: not dms_binary.stat.exists
 
       - name: Ensure graphical target is default when greetd is used
         ansible.builtin.command: systemctl set-default graphical.target

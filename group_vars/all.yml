@@ -37,6 +37,7 @@ base_packages_core:
     - shellcheck
     - wl-clipboard
     - keepassxc
+    - nautilus
     - flatpak
     - fontconfig
     - dnf-plugins-core
@@ -70,7 +71,6 @@ base_packages_gui:
     - gnome-control-center
     - gnome-software
     - gnome-disk-utility
-    - nautilus
     - gimp
     - inkscape
     - krita

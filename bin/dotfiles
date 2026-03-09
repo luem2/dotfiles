@@ -65,6 +65,18 @@ ensure_base_packages() {
   echo "$SUDO_PASS" | sudo -S dnf install -y git curl jq unzip ansible stow
 }
 
+run_dankinstall() {
+  if command -v niri >/dev/null 2>&1 && command -v dms >/dev/null 2>&1; then
+    log_info "Niri and DMS already installed; skipping dankinstall."
+    return 0
+  fi
+
+  log_info "Running official Dank installer (https://install.danklinux.com)"
+  if ! curl -fsSL https://install.danklinux.com | bash; then
+    die "official dankinstall failed"
+  fi
+}
+
 ssh_repo_access_ok() {
   GIT_SSH_COMMAND="ssh $GIT_SSH_NONINTERACTIVE_OPTS" git ls-remote --exit-code "$DOTFILES_REPO_URL_SSH" HEAD >/dev/null 2>&1
 }
@@ -185,8 +197,22 @@ run_stow() {
     return 0
   fi
 
+  local had_conflicts=0
+  local package_name
+
   log_info "Applying Stow packages"
-  (cd "$DOTFILES_DIR/roles" && stow -d "$DOTFILES_DIR/roles" -t "$HOME" --adopt -R */)
+  while IFS= read -r -d '' package_dir; do
+    package_name="${package_dir##*/}"
+    if ! (cd "$DOTFILES_DIR/roles" && stow -d "$DOTFILES_DIR/roles" -t "$HOME" --no-folding -R "$package_name"); then
+      had_conflicts=1
+      log_warn "Stow skipped package '$package_name' due to conflicts."
+    fi
+  done < <(find "$DOTFILES_DIR/roles" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+
+  if [ "$had_conflicts" -eq 1 ]; then
+    log_warn "Some packages were skipped due to conflicts."
+    log_warn "Fix conflicts and rerun."
+  fi
 }
 
 main() {
@@ -197,6 +223,7 @@ main() {
   ensure_repo
   install_dotfiles_binary
   reexec_if_binary_updated "$@"
+  run_dankinstall
   ensure_gitconfig_local
   run_ansible
   run_stow
