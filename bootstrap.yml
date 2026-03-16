@@ -399,23 +399,18 @@
 
       - name: Add Flathub remote
         ansible.builtin.command:
-            cmd: "flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo"
+            cmd: "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+        become: false
 
       - name: Install Flatpak applications
         ansible.builtin.command:
-            cmd: "flatpak install -y --noninteractive flathub {{ item }}"
+            cmd: "flatpak install -y --noninteractive --user flathub {{ item }}"
         register: flatpak_install
         changed_when: "'already installed' not in (flatpak_install.stdout | lower)"
         loop: "{{ flatpak_apps }}"
         loop_control:
             label: "{{ item }}"
-
-      - name: Remove Flatpak YouTube Music if present
-        ansible.builtin.command:
-            cmd: "flatpak uninstall -y --noninteractive app.ytmdesktop.ytmdesktop"
-        register: flatpak_remove_ytm
-        changed_when: "'not installed' not in (flatpak_remove_ytm.stdout | lower) and 'not installed' not in (flatpak_remove_ytm.stderr | lower)"
-        failed_when: false
+        become: false
 
       - name: Ensure local applications directory for webapps
         ansible.builtin.file:

@@ -19,7 +19,6 @@
 - Fedora con `sudo`.
 - SSH:
   - Configuración y llaves manuales (no se restauran automáticamente).
-- KeePassXC (opcional, para gestión de secretos manual).
 - VirtIO (Windows VMs):
   - El ISO de drivers se descarga manualmente desde https://fedorapeople.org/groups/virt/virtio-win/
 - VMs (virt-manager):
