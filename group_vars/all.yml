@@ -60,8 +60,6 @@ base_packages_dev:
     - golang
     - golang-x-tools-devel
     - delve
-    - rust
-    - cargo
     - podman
     - podman-compose
 

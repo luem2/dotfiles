@@ -40,6 +40,7 @@ sudo dnf install -y curl
 ```
 
 El resto de dependencias (`git`, `jq`, `unzip`, `ansible`, `stow`) las instala automáticamente el script `dotfiles`.
+Rust se instala con `rustup` durante el playbook, no desde los paquetes de Fedora.
 
 Ejemplo de `~/.config/dotfiles/vars.yml`:
 
