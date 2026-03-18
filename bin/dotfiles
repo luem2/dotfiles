@@ -38,7 +38,7 @@ log_info() { printf "%b\n" "${BLUE}${ICON_INFO}${RESET} ${BLUE}[INFO]${RESET} $*
 log_ok() { printf "%b\n" "${GREEN}${ICON_OK}${RESET} ${GREEN}[OK]${RESET} $*"; }
 log_warn() { printf "%b\n" "${YELLOW}${ICON_WARN}${RESET} ${YELLOW}[WARN]${RESET} $*"; }
 log_error() { printf "%b\n" "${RED}${ICON_ERROR}${RESET} ${RED}[ERROR]${RESET} $*"; }
-log_prompt() { printf "%b" "${BOLD}${YELLOW}${ICON_PROMPT}${RESET} ${BOLD}${YELLOW}[INPUT]${RESET} $*"; }
+log_prompt() { printf "%b" "${BOLD}${YELLOW}${ICON_PROMPT}${RESET} ${BOLD}${YELLOW}[INPUT]${RESET} $*" >&2; }
 die() { log_error "$*"; exit 1; }
 
 SUDO_PASS=""
