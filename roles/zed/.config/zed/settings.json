@@ -9,11 +9,13 @@
 {
     "agent_servers": {
         "codex-acp": {
-            "type": "registry",
             "favorite_config_option_values": {
-                "mode": ["full-access"],
+                "model": [
+                    "gpt-5.3-codex"
+                ]
             },
-        },
+            "type": "registry"
+        }
     },
     "edit_predictions": {
         "provider": "zed",
