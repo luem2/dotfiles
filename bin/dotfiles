@@ -1,16 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_REPO_URL_SSH="git@github.com:luem2/dotfiles.git"
-DOTFILES_REPO_URL_HTTPS="https://github.com/luem2/dotfiles.git"
-DOTFILES_DIR_DEFAULT="$HOME/.dotfiles"
-DOTFILES_DIR="${DOTFILES_DIR:-$DOTFILES_DIR_DEFAULT}"
 INSTALL_PATH="$HOME/.local/bin/dotfiles"
-GITHUB_SSH_KEY_PATH="$HOME/.ssh/fedora-github"
-GIT_SSH_NONINTERACTIVE_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=yes -o PreferredAuthentications=publickey -o IdentitiesOnly=yes -o ConnectTimeout=5"
 
 GITCONFIG_LOCAL_PATH="$HOME/.gitconfig.local"
-DOTFILES_BINARY_UPDATED=0
+
+resolve_script_path() {
+  local source_path="${BASH_SOURCE[0]}"
+
+  while [ -L "$source_path" ]; do
+    local source_dir
+    source_dir="$(cd -P "$(dirname "$source_path")" && pwd)"
+    source_path="$(readlink "$source_path")"
+    if [[ "$source_path" != /* ]]; then
+      source_path="$source_dir/$source_path"
+    fi
+  done
+
+  cd -P "$(dirname "$source_path")" && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_path)"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if command -v tput >/dev/null 2>&1 && [ -t 1 ]; then
   BOLD="$(tput bold)"
@@ -78,82 +89,18 @@ run_dankinstall() {
   fi
 }
 
-git_ssh_command() {
-  local ssh_command="ssh $GIT_SSH_NONINTERACTIVE_OPTS"
-
-  if [ -f "$GITHUB_SSH_KEY_PATH" ]; then
-    ssh_command="$ssh_command -i $GITHUB_SSH_KEY_PATH"
-  fi
-
-  printf '%s\n' "$ssh_command"
-}
-
-ensure_github_known_host() {
-  mkdir -p "$HOME/.ssh"
-  touch "$HOME/.ssh/known_hosts"
-  chmod 700 "$HOME/.ssh"
-  chmod 600 "$HOME/.ssh/known_hosts"
-
-  if ! ssh-keygen -F github.com -f "$HOME/.ssh/known_hosts" >/dev/null 2>&1; then
-    ssh-keyscan -H github.com >>"$HOME/.ssh/known_hosts" 2>/dev/null || die "failed to add github.com to known_hosts"
+ensure_repo_layout() {
+  if [ ! -f "$DOTFILES_DIR/bootstrap.yml" ] || [ ! -d "$DOTFILES_DIR/roles" ]; then
+    die "dotfiles repo not found at $DOTFILES_DIR. Run this script from the cloned repository or symlink $INSTALL_PATH to $DOTFILES_DIR/bin/dotfiles."
   fi
 }
 
-ssh_repo_access_ok() {
-  ensure_github_known_host
-  GIT_SSH_COMMAND="$(git_ssh_command)" git ls-remote --exit-code "$DOTFILES_REPO_URL_SSH" HEAD >/dev/null 2>&1
-}
+install_dotfiles_symlink() {
+  local source_script="$DOTFILES_DIR/bin/dotfiles"
 
-switch_origin_to_ssh_if_available() {
-  local current_origin
-  current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
-  if [ "$current_origin" = "$DOTFILES_REPO_URL_HTTPS" ] && ssh_repo_access_ok; then
-    log_info "SSH access detected. Switching dotfiles origin to SSH."
-    git -C "$DOTFILES_DIR" remote set-url origin "$DOTFILES_REPO_URL_SSH"
-  fi
-}
-
-ensure_repo() {
-  if [ -d "$DOTFILES_DIR/.git" ]; then
-    switch_origin_to_ssh_if_available
-    log_info "Updating dotfiles repo"
-    if ! GIT_SSH_COMMAND="$(git_ssh_command)" git -C "$DOTFILES_DIR" pull --quiet --ff-only; then
-      local current_origin
-      current_origin="$(git -C "$DOTFILES_DIR" remote get-url origin 2>/dev/null || true)"
-      if [ "$current_origin" = "$DOTFILES_REPO_URL_SSH" ]; then
-        log_warn "SSH pull failed, switching origin to HTTPS and retrying"
-        git -C "$DOTFILES_DIR" remote set-url origin "$DOTFILES_REPO_URL_HTTPS"
-        git -C "$DOTFILES_DIR" pull --quiet --ff-only || die "failed to update dotfiles repo via HTTPS"
-      else
-        die "failed to update dotfiles repo"
-      fi
-    fi
-  else
-    log_info "Cloning dotfiles repo"
-    ensure_github_known_host
-    if ! GIT_SSH_COMMAND="$(git_ssh_command)" git clone --quiet "$DOTFILES_REPO_URL_SSH" "$DOTFILES_DIR"; then
-      log_warn "SSH clone failed, retrying with HTTPS"
-      git clone --quiet "$DOTFILES_REPO_URL_HTTPS" "$DOTFILES_DIR" || die "failed to clone dotfiles repo"
-    fi
-  fi
-}
-
-install_dotfiles_binary() {
   mkdir -p "$(dirname "$INSTALL_PATH")"
-  if [ -f "$DOTFILES_DIR/bin/dotfiles" ]; then
-    if [ ! -f "$INSTALL_PATH" ] || ! cmp -s "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"; then
-      install -m 0755 "$DOTFILES_DIR/bin/dotfiles" "$INSTALL_PATH"
-      DOTFILES_BINARY_UPDATED=1
-    fi
-  fi
-}
-
-reexec_if_binary_updated() {
-  if [ "$DOTFILES_BINARY_UPDATED" -eq 1 ] && [ "${DOTFILES_REEXEC:-0}" != "1" ]; then
-    log_info "Relaunching dotfiles with updated launcher."
-    export DOTFILES_REEXEC=1
-    export SUDO_PASS
-    exec "$INSTALL_PATH" "$@"
+  if [ ! -L "$INSTALL_PATH" ] || [ "$(readlink -f "$INSTALL_PATH" 2>/dev/null || true)" != "$source_script" ]; then
+    ln -snf "$source_script" "$INSTALL_PATH"
   fi
 }
 
@@ -241,12 +188,11 @@ run_stow() {
 
 main() {
   log_info "Starting dotfiles"
+  ensure_repo_layout
   require_sudo
   ensure_dnf
   ensure_base_packages
-  ensure_repo
-  install_dotfiles_binary
-  reexec_if_binary_updated "$@"
+  install_dotfiles_symlink
   run_dankinstall
   ensure_gitconfig_local
   run_ansible

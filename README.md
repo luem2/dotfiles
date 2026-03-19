@@ -40,6 +40,7 @@ sudo dnf install -y curl
 ```
 
 El resto de dependencias (`git`, `jq`, `unzip`, `ansible`, `stow`) las instala automáticamente el script `dotfiles`.
+El playbook también instala herramientas de desarrollo como `just`.
 Rust se instala con `rustup` durante el playbook, no desde los paquetes de Fedora.
 
 Ejemplo de `~/.config/dotfiles/vars.yml`:
@@ -53,7 +54,9 @@ gaming_packages:
 ## Instalación
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/luem2/dotfiles/main/bin/dotfiles | sh
+git clone https://github.com/luem2/dotfiles.git ~/workspace/dotfiles
+ln -snf ~/workspace/dotfiles/bin/dotfiles ~/.local/bin/dotfiles
+dotfiles
 ```
 
 ## Uso
@@ -65,12 +68,46 @@ dotfiles
 Esto ejecuta:
 1. El instalador oficial de Dank (`dankinstall`) para Niri + DMS.
 2. El playbook de Ansible.
-3. Los enlaces con Stow en modo seguro (`--no-folding`, sin adopción de archivos existentes).
+3. Los enlaces con Stow en modo seguro (`--no-folding`, sin adopción de archivos existentes) usando el repo clonado como fuente real.
 
 ## Stow manual (opcional)
 
+Ejecutalo parado en `roles/`:
+
 ```sh
 stow -d . -t ~ --no-folding -R -S */
+```
+
+Qué hace:
+
+- `-d .`: usa el directorio actual como `stow dir`. En este repo, eso significa `roles/`.
+- `-t ~`: crea los symlinks en tu home.
+- `--no-folding`: no colapsa directorios completos en un solo symlink; enlaza archivo por archivo.
+- `-R`: re-stow. Reaplica el paquete y actualiza symlinks existentes de ese mismo origen.
+- `-S`: stow. Activa los paquetes indicados.
+- `*/`: selecciona todos los directorios hijos de `roles/`, o sea todos los paquetes.
+
+Ejemplo equivalente con ruta explícita desde la raíz del repo:
+
+```sh
+stow -d roles -t ~ --no-folding -R -S roles/*
+```
+
+Para deshacer los symlinks manualmente:
+
+```sh
+stow -d . -t ~ --no-folding -D */
+```
+
+Qué hace:
+
+- `-D`: unstow. Elimina los symlinks creados por Stow para esos paquetes.
+- `*/`: aplica la operación a todos los paquetes dentro de `roles/`.
+
+Ejemplo equivalente con ruta explícita desde la raíz del repo:
+
+```sh
+stow -d roles -t ~ --no-folding -D roles/*
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

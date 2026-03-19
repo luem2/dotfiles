@@ -57,6 +57,7 @@ base_packages_core:
 base_packages_dev:
     - neovim
     - helix
+    - just
     - golang
     - golang-x-tools-devel
     - delve
