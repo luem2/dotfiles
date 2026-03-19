@@ -8,7 +8,8 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
     "agent_servers": {
-        "codex": {
+        "codex-acp": {
+            "type": "registry",
             "favorite_config_option_values": {
                 "mode": ["full-access"],
             },

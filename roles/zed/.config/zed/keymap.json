@@ -10,6 +10,20 @@
         "bindings": {
             "ctrl-e": "workspace::ToggleRightDock",
             "ctrl-b": "workspace::ToggleLeftDock",
+            "ctrl-`": "workspace::ToggleBottomDock",
+        },
+    },
+    {
+        "context": "Editor && vim_mode == normal",
+        "bindings": {
+            "space d b": "editor::ToggleBreakpoint",
+            "space d d": "debugger::ClearAllBreakpoints",
+            "space d c": "debugger::Continue",
+            "space d i": "debugger::StepInto",
+            "space d o": "debugger::StepOut",
+            "space d n": "debugger::StepOver",
+            "space d r": "debugger::Restart",
+            "space d s": "debugger::Stop",
         },
     },
     {
