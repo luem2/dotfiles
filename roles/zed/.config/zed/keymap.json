@@ -10,7 +10,7 @@
         "bindings": {
             "ctrl-e": "workspace::ToggleRightDock",
             "ctrl-b": "workspace::ToggleLeftDock",
-            "ctrl-`": "workspace::ToggleBottomDock",
+            "ctrl-shift-d": "debug_panel::Toggle",
         },
     },
     {
