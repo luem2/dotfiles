@@ -36,7 +36,6 @@ base_packages_core:
     - zoxide
     - shellcheck
     - wl-clipboard
-    - keepassxc
     - nautilus
     - flatpak
     - fontconfig
@@ -84,7 +83,8 @@ flatpak_apps:
     - org.localsend.localsend_app
     - com.discordapp.Discord
     - com.slack.Slack
-    - md.obsidian.Obsidian
+    - io.anytype.anytype
+    - com.bitwarden.desktop
 
 youtube_music_webapp_name: "YouTube Music"
 youtube_music_webapp_url: "https://music.youtube.com/"

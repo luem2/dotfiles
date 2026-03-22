@@ -9,11 +9,6 @@
 {
     "agent_servers": {
         "codex-acp": {
-            "favorite_config_option_values": {
-                "model": [
-                    "gpt-5.3-codex"
-                ]
-            },
             "type": "registry"
         }
     },
