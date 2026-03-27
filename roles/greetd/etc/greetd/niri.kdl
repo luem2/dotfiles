@@ -1,0 +1,7 @@
+environment {
+    DMS_RUN_GREETER "1"
+}
+
+hotkey-overlay {
+    skip-at-startup
+}
