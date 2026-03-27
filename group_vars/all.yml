@@ -67,7 +67,6 @@ base_packages_dev:
 base_packages_gui:
     - libreoffice
     - thunderbird
-    - gnome-control-center
     - gnome-software
     - gnome-disk-utility
     - gimp
