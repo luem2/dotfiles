@@ -189,11 +189,18 @@
                       WantedBy=default.target
               become: false
 
-            - name: Enable danksearch install service
-              ansible.builtin.systemd:
-                  name: danksearch-install.service
-                  enabled: true
-                  scope: user
+            - name: Ensure user default target wants directory
+              ansible.builtin.file:
+                  path: "{{ dotfiles_user_home }}/.config/systemd/user/default.target.wants"
+                  state: directory
+                  mode: "0755"
+              become: false
+
+            - name: Enable danksearch install service for next user session
+              ansible.builtin.file:
+                  src: "{{ dotfiles_user_home }}/.config/systemd/user/danksearch-install.service"
+                  dest: "{{ dotfiles_user_home }}/.config/systemd/user/default.target.wants/danksearch-install.service"
+                  state: link
               become: false
 
       - name: Download eza
@@ -288,29 +295,29 @@
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
 
+      - name: Ensure greetd config directory exists
+        ansible.builtin.file:
+            path: /etc/greetd
+            state: directory
+            mode: "0755"
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+
       - name: Configure greetd for Niri
         ansible.builtin.copy:
+            src: roles/greetd/etc/greetd/config.toml
             dest: /etc/greetd/config.toml
             mode: "0644"
-            content: |
-                [terminal]
-                vt = 1
-
-                [default_session]
-                command = "dms-greeter --command niri -C /etc/greetd/niri.kdl"
-                user = "greeter"
         when:
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
 
       - name: Configure greetd Niri session
         ansible.builtin.copy:
+            src: roles/greetd/etc/greetd/niri.kdl
             dest: /etc/greetd/niri.kdl
             mode: "0644"
-            content: |
-                environment {
-                    DMS_RUN_GREETER "1"
-                }
         when:
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
@@ -340,12 +347,6 @@
             enabled: true
             state: started
         loop: "{{ core_services }}"
-
-      - name: Enable and start Syncthing daemon
-        ansible.builtin.systemd:
-            name: "syncthing@{{ dotfiles_user_name }}"
-            enabled: true
-            state: started
 
       - name: Install Go developer tools
         ansible.builtin.command:
@@ -429,47 +430,14 @@
             label: "{{ item }}"
         become: false
 
-      - name: Ensure local applications directory for webapps
-        ansible.builtin.file:
-            path: "{{ dotfiles_user_home }}/.local/share/applications"
-            state: directory
-            mode: "0755"
-        become: false
-
-      - name: Remove Syncthing start launcher from applications
-        ansible.builtin.file:
-            path: /usr/share/applications/syncthing-start.desktop
-            state: absent
-
-      - name: Ensure local icon directory for YouTube Music webapp
-        ansible.builtin.file:
-            path: "{{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps"
-            state: directory
-            mode: "0755"
-        become: false
-
-      - name: Download YouTube Music webapp icon
-        ansible.builtin.get_url:
-            url: "{{ youtube_music_webapp_icon_url }}"
-            dest: "{{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps/{{ youtube_music_webapp_icon_file }}"
-            mode: "0644"
-        become: false
-
-      - name: Install YouTube Music webapp launcher
-        ansible.builtin.copy:
-            dest: "{{ dotfiles_user_home }}/.local/share/applications/{{ youtube_music_webapp_desktop_file }}"
-            mode: "0644"
-            content: |
-                [Desktop Entry]
-                Version=1.0
-                Type=Application
-                Name={{ youtube_music_webapp_name }}
-                Comment=YouTube Music Web App
-                Exec={{ youtube_music_webapp_browser_cmd }} --app={{ youtube_music_webapp_url }}
-                Terminal=false
-                Categories=AudioVideo;Music;Network;
-                StartupNotify=true
-                Icon={{ dotfiles_user_home }}/.local/share/icons/hicolor/256x256/apps/{{ youtube_music_webapp_icon_file }}
+      - name: Announce YouTube Music install flow
+        ansible.builtin.debug:
+            msg: >-
+                Install YouTube Music from Chrome as a web app:
+                open https://music.youtube.com/,
+                then Chrome menu > Cast, save, and share > Install page as app.
+                This preserves the official app id, icon, and dock grouping.
+        changed_when: false
         become: false
 
       - name: Announce window manager setup
@@ -522,16 +490,6 @@
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
             - niri_binary.stat.exists
-
-      - name: Disable existing display manager when greetd is forced
-        ansible.builtin.systemd:
-            name: display-manager
-            enabled: false
-            state: stopped
-        when:
-            - force_greetd | bool
-            - has_display_manager | bool
-        failed_when: false
 
       - name: Ensure user systemd wants directory
         ansible.builtin.file:

@@ -70,6 +70,12 @@ Esto ejecuta:
 2. El playbook de Ansible.
 3. Los enlaces con Stow en modo seguro (`--no-folding`, sin adopción de archivos existentes) usando el repo clonado como fuente real.
 
+YouTube Music:
+
+- No se crea un launcher manual.
+- Instalalo de forma oficial desde Chrome: abrí `https://music.youtube.com/` y usá `Cast, save, and share` -> `Install page as app`.
+- Eso conserva el icono, el `app id` y el agrupado correcto en el dock.
+
 ## Stow manual (opcional)
 
 Ejecutalo parado en `roles/`:
