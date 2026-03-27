@@ -417,18 +417,16 @@
 
       - name: Add Flathub remote
         ansible.builtin.command:
-            cmd: "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-        become: false
+            cmd: "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
 
       - name: Install Flatpak applications
         ansible.builtin.command:
-            cmd: "flatpak install -y --noninteractive --user flathub {{ item }}"
+            cmd: "flatpak install -y --noninteractive flathub {{ item }}"
         register: flatpak_install
         changed_when: "'already installed' not in (flatpak_install.stdout | lower)"
         loop: "{{ flatpak_apps }}"
         loop_control:
             label: "{{ item }}"
-        become: false
 
       - name: Announce YouTube Music install flow
         ansible.builtin.debug:
