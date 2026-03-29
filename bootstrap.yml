@@ -322,6 +322,15 @@
             - install_greetd_if_no_dm | bool
             - force_greetd | bool or not has_display_manager
 
+      - name: Configure greetd PAM stack
+        ansible.builtin.copy:
+            src: roles/greetd/etc/pam.d/greetd
+            dest: /etc/pam.d/greetd
+            mode: "0644"
+        when:
+            - install_greetd_if_no_dm | bool
+            - force_greetd | bool or not has_display_manager
+
       - name: Enable and start libvirtd
         ansible.builtin.systemd:
             name: libvirtd
@@ -507,6 +516,20 @@
             dest: "{{ dotfiles_user_home }}/.config/systemd/user/niri.service.wants/dms.service"
             state: link
         when: dms_service.stat.exists
+        become: false
+
+      - name: Ensure WirePlumber user config directory
+        ansible.builtin.file:
+            path: "{{ dotfiles_user_home }}/.config/wireplumber/wireplumber.conf.d"
+            state: directory
+            mode: "0755"
+        become: false
+
+      - name: Configure WirePlumber Bluetooth auto-connect
+        ansible.builtin.copy:
+            src: roles/wireplumber/home/.config/wireplumber/wireplumber.conf.d/10-bluetooth-autoconnect.conf
+            dest: "{{ dotfiles_user_home }}/.config/wireplumber/wireplumber.conf.d/10-bluetooth-autoconnect.conf"
+            mode: "0644"
         become: false
 
       - name: Announce font setup

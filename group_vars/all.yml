@@ -69,6 +69,7 @@ base_packages_gui:
     - thunderbird
     - gnome-software
     - gnome-disk-utility
+    - seahorse
     - gimp
     - inkscape
     - krita
@@ -107,6 +108,8 @@ virtualization_packages:
 greetd_packages:
     - greetd
     - dms-greeter
+    - gnome-keyring
+    - gnome-keyring-pam
 
 install_greetd_if_no_dm: true
 force_greetd: true
@@ -115,6 +118,7 @@ core_services:
     - firewalld
     - fstrim.timer
     - avahi-daemon
+    - bluetooth
 
 nerd_fonts:
     - name: JetBrainsMono
