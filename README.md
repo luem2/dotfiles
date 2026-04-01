@@ -76,6 +76,209 @@ YouTube Music:
 - Instalalo de forma oficial desde Chrome: abrí `https://music.youtube.com/` y usá `Cast, save, and share` -> `Install page as app`.
 - Eso conserva el icono, el `app id` y el agrupado correcto en el dock.
 
+## Troubleshooting
+
+### Wi-Fi: autoconnect, prioridad y perfiles guardados
+
+`NetworkManager` no elige "la red mas cercana" de forma literal. Decide en base a:
+
+- perfiles guardados
+- `autoconnect`
+- prioridad del perfil
+- exito o fallo de conexiones previas
+
+Por eso, si existe un perfil viejo con `autoconnect=yes`, puede intentar usarlo primero y demorar la conexion aunque haya otra red mejor disponible.
+
+Inspeccionar perfiles:
+
+```sh
+nmcli connection show
+```
+
+Ver solo nombre, tipo, autoconnect y prioridad:
+
+```sh
+nmcli -f NAME,TYPE,AUTOCONNECT,AUTOCONNECT-PRIORITY connection show
+```
+
+Subir la prioridad de un perfil Wi-Fi:
+
+```sh
+nmcli connection modify "<wifi>" connection.autoconnect-priority 200
+```
+
+Bajar la prioridad de otro perfil:
+
+```sh
+nmcli connection modify "<wifi>" connection.autoconnect-priority 50
+```
+
+Desactivar autoconnect para un perfil guardado sin borrarlo:
+
+```sh
+nmcli connection modify "<wifi>" connection.autoconnect no
+```
+
+Volver a activarlo:
+
+```sh
+nmcli connection modify "<wifi>" connection.autoconnect yes
+```
+
+Borrar un perfil guardado:
+
+```sh
+nmcli connection delete "<wifi>"
+```
+
+Activar una conexion manualmente:
+
+```sh
+nmcli connection up "<wifi>"
+```
+
+Ver la conexion activa:
+
+```sh
+nmcli -f NAME,TYPE,DEVICE,STATE connection show --active
+```
+
+Ver logs del arranque actual de `NetworkManager`:
+
+```sh
+journalctl -b -u NetworkManager.service
+```
+
+Filtrar eventos Wi-Fi/auth:
+
+```sh
+journalctl -b -u NetworkManager.service | rg "wifi|wpa|auth|ssid|wrong_key|need-auth"
+```
+
+### OpenVPN importado en NetworkManager
+
+Si un `.ovpn` importado funciona con:
+
+```sh
+nmcli connection up "<vpn>" --ask
+```
+
+entonces el perfil base esta bien y el problema suele ser de secretos no guardados o del agente grafico que los pide.
+
+Mostrar el perfil:
+
+```sh
+nmcli connection show "<vpn>"
+```
+
+Mostrar secretos visibles para diagnostico:
+
+```sh
+nmcli --show-secrets connection show "<vpn>"
+```
+
+Si el `.ovpn` usa una clave privada cifrada (`ENCRYPTED PRIVATE KEY`), la conexion puede necesitar `cert-pass` en lugar de un password VPN comun.
+
+En ese caso, algunos agentes graficos pueden pedir el secreto equivocado o entrar en bucle. Una forma confiable de validar el perfil es:
+
+```sh
+nmcli connection up "<vpn>" --ask
+```
+
+Si eso conecta, el perfil importado esta bien y el problema suele ser del agente grafico de secretos, no del `.ovpn`.
+
+Para revisar si el perfil esta usando passphrase de certificado:
+
+```sh
+nmcli connection show "<vpn>" | rg "cert-pass|challenge-response|vpn.data"
+```
+
+Si el agente grafico entra en bucle pidiendo password, revisa el keyfile real de `NetworkManager`:
+
+```sh
+sudo nvim /etc/NetworkManager/system-connections/<vpn>.nmconnection
+```
+
+En la seccion `[vpn]`, `cert-pass-flags` debe quedar asi:
+
+```ini
+cert-pass-flags=0
+```
+
+Si esta en `1`, `NetworkManager` sigue tratando la passphrase como `agent-owned` y depende del prompt grafico.
+
+Ademas, el archivo debe tener una seccion `[vpn-secrets]`:
+
+```ini
+[vpn-secrets]
+cert-pass=<passphrase>
+```
+
+Despues de editar el keyfile:
+
+```sh
+sudo chmod 600 /etc/NetworkManager/system-connections/<vpn>.nmconnection
+sudo nmcli connection reload
+```
+
+Verificacion:
+
+```sh
+nmcli --show-secrets connection show "<vpn>" | rg "cert-pass|vpn.secrets|cert-pass-flags"
+```
+
+Con eso, `NetworkManager` ya no depende del prompt interactivo y el plugin grafico puede conectar el VPN sin pedir password.
+
+Si al conectar el VPN "anda" pero te deja sin salida a internet, normalmente significa que el tunel esta tomando la ruta por defecto. Para dejarlo en modo split-tunnel desde `NetworkManager`:
+
+```sh
+nmcli connection modify "<vpn>" ipv4.never-default yes ipv6.never-default yes
+```
+
+Luego volver a levantar la conexion:
+
+```sh
+nmcli connection down "<vpn>"
+nmcli connection up "<vpn>" --ask
+```
+
+Si quieres volver al comportamiento full-tunnel:
+
+```sh
+nmcli connection modify "<vpn>" ipv4.never-default no ipv6.never-default no
+```
+
+Si el VPN conecta pero no resuelven dominios internos, el problema suele ser DNS del tunel, no conectividad IP.
+
+Ver estado de DNS y rutas:
+
+```sh
+nmcli -f NAME,TYPE,DEVICE,STATE connection show --active
+nmcli device show tun0
+resolvectl status
+ip route
+```
+
+Para usar el DNS de la VPN tambien en split-tunnel:
+
+```sh
+nmcli connection modify "<vpn>" ipv4.dns-search "~."
+nmcli connection down "<vpn>"
+nmcli connection up "<vpn>" --ask
+```
+
+Si solo quieres mandar un dominio interno concreto al DNS de la VPN:
+
+```sh
+nmcli connection modify "<vpn>" ipv4.dns-search "~dominio.interno"
+```
+
+Nota importante:
+
+- modificar el `.ovpn` original no cambia automaticamente el perfil ya importado en `NetworkManager`
+- una vez importado, lo que manda es el perfil guardado por `NetworkManager`
+- si quieres aplicar cambios del archivo original, reimporta el perfil o edita directamente el keyfile de `NetworkManager`
+
 ## Stow manual (opcional)
 
 Ejecutalo parado en `roles/`:
