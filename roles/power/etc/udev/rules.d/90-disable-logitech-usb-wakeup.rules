@@ -1,0 +1,3 @@
+# Specific to the Logitech USB Receiver used in this setup.
+# Disable wakeup on this receiver because it caused immediate resume from s2idle.
+ACTION=="add|change", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="c548", TEST=="power/wakeup", ATTR{power/wakeup}="disabled"

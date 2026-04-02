@@ -337,6 +337,20 @@
             enabled: true
             state: started
 
+      - name: Install USB wakeup udev rules
+        ansible.builtin.copy:
+            src: roles/power/etc/udev/rules.d/90-disable-logitech-usb-wakeup.rules
+            dest: /etc/udev/rules.d/90-disable-logitech-usb-wakeup.rules
+            mode: "0644"
+
+      - name: Reload udev rules
+        ansible.builtin.command: udevadm control --reload
+        changed_when: false
+
+      - name: Trigger udev for USB devices
+        ansible.builtin.command: udevadm trigger --subsystem-match=usb
+        changed_when: false
+
       - name: Add user to virtualization groups
         ansible.builtin.user:
             name: "{{ dotfiles_user_name }}"

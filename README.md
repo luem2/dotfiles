@@ -279,6 +279,74 @@ Nota importante:
 - una vez importado, lo que manda es el perfil guardado por `NetworkManager`
 - si quieres aplicar cambios del archivo original, reimporta el perfil o edita directamente el keyfile de `NetworkManager`
 
+### Suspend: wakeup inmediato en `s2idle`
+
+Si el equipo entra en suspend pero se despierta casi instantaneamente, no siempre es un problema de `Niri` o `DMS`. En laptops modernas con Fedora suele intervenir:
+
+- `s2idle` como modo de suspend por defecto
+- algun dispositivo con wakeup habilitado
+
+Ver modo actual de suspend:
+
+```sh
+cat /sys/power/mem_sleep
+```
+
+Si ves algo como:
+
+```text
+[s2idle] deep
+```
+
+entonces el equipo esta usando `s2idle`.
+
+Listar wakeup USB que suelen ser sospechosos:
+
+```sh
+grep . /sys/bus/usb/devices/*/power/wakeup 2>/dev/null
+```
+
+En este setup se identificaron dos receptores relevantes:
+
+- `3-4`: `Logitech USB Receiver`
+- `3-1.2`: `AJAZZ AK820 MAX 2.4G`
+
+La prueba util para aislar el culpable es desactivar uno por vez y luego suspender:
+
+```sh
+echo disabled | sudo tee /sys/bus/usb/devices/3-4/power/wakeup
+echo enabled | sudo tee /sys/bus/usb/devices/3-1.2/power/wakeup
+systemctl suspend
+```
+
+Resultado validado en esta maquina:
+
+- con `3-4` deshabilitado, el equipo suspende bien
+- `3-1.2` puede quedar habilitado
+- el sistema se puede reanudar correctamente desde el teclado AJAZZ
+
+Interpretacion:
+
+- `3-4` es el receiver Logitech
+- ese receiver estaba generando el wakeup espurio
+- `3-1.2` es el dongle del teclado AJAZZ
+- ese dongle si sirve como wake source util
+- la persistencia no debe basarse en `3-4`, sino en `idVendor:idProduct`
+- en este repo la regla persistente usa `046d:c548`, que corresponde a este receiver Logitech concreto
+
+Para volver al estado base:
+
+```sh
+echo enabled | sudo tee /sys/bus/usb/devices/3-4/power/wakeup
+echo enabled | sudo tee /sys/bus/usb/devices/3-1.2/power/wakeup
+```
+
+Para diagnosticar el ultimo ciclo de suspend:
+
+```sh
+journalctl -b -1 | rg "suspend|PM: suspend|wakeup|wake|ACPI"
+```
+
 ## Stow manual (opcional)
 
 Ejecutalo parado en `roles/`:
