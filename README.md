@@ -157,127 +157,84 @@ journalctl -b -u NetworkManager.service | rg "wifi|wpa|auth|ssid|wrong_key|need-
 
 ### OpenVPN importado en NetworkManager
 
-Si un `.ovpn` importado funciona con:
+Caso ya resuelto en esta maquina: el VPN conectaba, pero pasaban tres cosas a la vez.
 
-```sh
-nmcli connection up "<vpn>" --ask
-```
+- la GUI entraba en bucle pidiendo el secreto
+- al conectar, se perdia Internet
+- los hosts internos dejaban de resolver por DNS aunque el tunel levantaba
 
-entonces el perfil base esta bien y el problema suele ser de secretos no guardados o del agente grafico que los pide.
+El arreglo minimo y persistente fue este.
 
-Mostrar el perfil:
+Diagnostico rapido:
 
 ```sh
 nmcli connection show "<vpn>"
-```
-
-Mostrar secretos visibles para diagnostico:
-
-```sh
 nmcli --show-secrets connection show "<vpn>"
+nmcli device show tun0
+resolvectl status
+ip route
 ```
 
-Si el `.ovpn` usa una clave privada cifrada (`ENCRYPTED PRIVATE KEY`), la conexion puede necesitar `cert-pass` en lugar de un password VPN comun.
+Si el perfil usa una clave privada cifrada (`ENCRYPTED PRIVATE KEY`), normalmente no hay un password VPN comun sino `cert-pass`.
+En ese caso, si `nmcli connection up "<vpn>" --ask` funciona pero la GUI no, el problema suele ser el manejo del secreto por `NetworkManager` o por el agente grafico.
 
-En ese caso, algunos agentes graficos pueden pedir el secreto equivocado o entrar en bucle. Una forma confiable de validar el perfil es:
-
-```sh
-nmcli connection up "<vpn>" --ask
-```
-
-Si eso conecta, el perfil importado esta bien y el problema suele ser del agente grafico de secretos, no del `.ovpn`.
-
-Para revisar si el perfil esta usando passphrase de certificado:
-
-```sh
-nmcli connection show "<vpn>" | rg "cert-pass|challenge-response|vpn.data"
-```
-
-Si el agente grafico entra en bucle pidiendo password, revisa el keyfile real de `NetworkManager`:
+Guardar la passphrase del certificado de forma persistente:
 
 ```sh
 sudo nvim /etc/NetworkManager/system-connections/<vpn>.nmconnection
 ```
 
-En la seccion `[vpn]`, `cert-pass-flags` debe quedar asi:
+En `[vpn]`:
 
 ```ini
 cert-pass-flags=0
 ```
 
-Si esta en `1`, `NetworkManager` sigue tratando la passphrase como `agent-owned` y depende del prompt grafico.
-
-Ademas, el archivo debe tener una seccion `[vpn-secrets]`:
+Y agregar:
 
 ```ini
 [vpn-secrets]
 cert-pass=<passphrase>
 ```
 
-Despues de editar el keyfile:
+Aplicar cambios:
 
 ```sh
 sudo chmod 600 /etc/NetworkManager/system-connections/<vpn>.nmconnection
 sudo nmcli connection reload
 ```
 
-Verificacion:
-
-```sh
-nmcli --show-secrets connection show "<vpn>" | rg "cert-pass|vpn.secrets|cert-pass-flags"
-```
-
-Con eso, `NetworkManager` ya no depende del prompt interactivo y el plugin grafico puede conectar el VPN sin pedir password.
-
-Si al conectar el VPN "anda" pero te deja sin salida a internet, normalmente significa que el tunel esta tomando la ruta por defecto. Para dejarlo en modo split-tunnel desde `NetworkManager`:
+Si al conectar se pierde Internet, dejar el perfil en split-tunnel:
 
 ```sh
 nmcli connection modify "<vpn>" ipv4.never-default yes ipv6.never-default yes
 ```
 
-Luego volver a levantar la conexion:
+Si el VPN conecta pero los hosts internos no resuelven, asociar el dominio interno al DNS del tunel:
+
+```sh
+nmcli connection modify "<vpn>" ipv4.dns-search "dominio.interno"
+```
+
+Luego reconectar:
 
 ```sh
 nmcli connection down "<vpn>"
-nmcli connection up "<vpn>" --ask
+nmcli connection up "<vpn>"
 ```
 
-Si quieres volver al comportamiento full-tunnel:
+Verificacion:
 
 ```sh
-nmcli connection modify "<vpn>" ipv4.never-default no ipv6.never-default no
+resolvectl query host.interno.dominio.interno
+nc -vz host.interno.dominio.interno 1433
 ```
 
-Si el VPN conecta pero no resuelven dominios internos, el problema suele ser DNS del tunel, no conectividad IP.
+Persistencia:
 
-Ver estado de DNS y rutas:
-
-```sh
-nmcli -f NAME,TYPE,DEVICE,STATE connection show --active
-nmcli device show tun0
-resolvectl status
-ip route
-```
-
-Para usar el DNS de la VPN tambien en split-tunnel:
-
-```sh
-nmcli connection modify "<vpn>" ipv4.dns-search "~."
-nmcli connection down "<vpn>"
-nmcli connection up "<vpn>" --ask
-```
-
-Si solo quieres mandar un dominio interno concreto al DNS de la VPN:
-
-```sh
-nmcli connection modify "<vpn>" ipv4.dns-search "~dominio.interno"
-```
-
-Nota importante:
-
-- modificar el `.ovpn` original no cambia automaticamente el perfil ya importado en `NetworkManager`
-- una vez importado, lo que manda es el perfil guardado por `NetworkManager`
-- si quieres aplicar cambios del archivo original, reimporta el perfil o edita directamente el keyfile de `NetworkManager`
+- el perfil importado vive en `/etc/NetworkManager/system-connections/<vpn>.nmconnection`
+- los cambios hechos con `nmcli connection modify ...` quedan en ese keyfile
+- editar el `.ovpn` original no actualiza automaticamente el perfil ya importado
 
 ### Suspend: wakeup inmediato en `s2idle`
 
