@@ -3,3 +3,8 @@
 roles/vscode/.config/Code/User/settings.json
 roles/dms/.config/DankMaterialShell/.changelog-*
 roles/dms/.config/DankMaterialShell/.firstlaunch
+roles/alacritty/.config/alacritty/dank-theme.toml
+roles/dms/.config/DankMaterialShell/firefox.css
+roles/ghostty/.config/ghostty/themes/dankcolors
+roles/niri/.config/niri/dms/colors.kdl
+roles/nvim/.config/nvim/lua/plugins/dankcolors.lua
