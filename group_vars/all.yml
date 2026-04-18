@@ -39,6 +39,8 @@ base_packages_core:
     - shellcheck
     - wl-clipboard
     - nautilus
+    - gvfs-smb
+    - samba-client
     - flatpak
     - fontconfig
     - dnf-plugins-core
