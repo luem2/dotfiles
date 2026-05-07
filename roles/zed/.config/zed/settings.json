@@ -7,7 +7,14 @@
 // custom settings, run zed: open default settings from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+    "outline_panel": {
+        "dock": "left"
+    },
+    "collaboration_panel": {
+        "dock": "left"
+    },
     "git_panel": {
+        "dock": "left",
         "tree_view": true,
     },
     "agent_servers": {
@@ -35,12 +42,17 @@
             "enable_lsp_tasks": true,
         },
     },
-    "icon_theme": "Catppuccin Latte",
+    "icon_theme": {
+        "mode": "light",
+        "light": "Catppuccin Latte",
+        "dark": "Catppuccin Latte"
+    },
     "telemetry": {
         "diagnostics": false,
         "metrics": false,
     },
     "agent": {
+        "dock": "right",
         "use_modifier_to_send": true,
     },
     "show_edit_predictions": false,
@@ -80,7 +92,7 @@
     // buffer font:
     "buffer_font_family": "0xProto Nerd Font",
     "buffer_font_weight": 500,
-    "buffer_font_size": 16,
+    "buffer_font_size": 14,
 
     // ui font:
     "ui_font_family": "0xProto Nerd Font",
