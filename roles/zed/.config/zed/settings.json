@@ -8,10 +8,10 @@
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
     "outline_panel": {
-        "dock": "left"
+        "dock": "left",
     },
     "collaboration_panel": {
-        "dock": "left"
+        "dock": "left",
     },
     "git_panel": {
         "dock": "left",
@@ -43,9 +43,9 @@
         },
     },
     "icon_theme": {
-        "mode": "light",
+        "mode": "dark",
         "light": "Catppuccin Latte",
-        "dark": "Catppuccin Latte"
+        "dark": "Catppuccin Latte",
     },
     "telemetry": {
         "diagnostics": false,
@@ -98,15 +98,24 @@
     "ui_font_family": "0xProto Nerd Font",
     "ui_font_weight": 500,
     "ui_font_size": 16,
-
     "theme": {
         "mode": "dark",
         "light": "Gruvbox Light",
         "dark": "One Dark Pro Max",
     },
-    "experimental.theme_overrides": {
-        "hint": "#7e8683",
+
+    "theme_overrides": {
+        "One Dark Pro Max": {
+            "syntax": {
+                "comment": {
+                    "color": "#5c6370",
+                    "font_style": "italic",
+                },
+            },
+            "hint": "#7e8683",
+        },
     },
+
     "tab_size": 4,
     "cursor_blink": false,
     "project_panel": {
