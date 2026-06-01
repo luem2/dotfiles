@@ -1,6 +1,12 @@
 config-notification {
     disable-failed
 }
+blur {
+    passes 4
+    offset 6.0
+    noise 0.03
+    saturation 1.35
+}
 gestures {
     hot-corners
 }
@@ -162,6 +168,9 @@ window-rule {
 window-rule {
     match is-active=false
     opacity 0.9
+    background-effect {
+        blur true
+    }
 }
 window-rule {
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"

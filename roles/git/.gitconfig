@@ -9,8 +9,7 @@
     defaultBranch = main
 
 [pull]
-    rebase = false
-    ff = only
+	rebase = true
 
 [fetch]
     prune = true
