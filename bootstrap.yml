@@ -51,6 +51,11 @@
             name: "*"
             state: latest
 
+      - name: Enable RPM Fusion Free repo
+        ansible.builtin.dnf:
+            name: "{{ rpmfusion_free_release_url }}"
+            state: present
+
       - name: Install package groups
         ansible.builtin.dnf:
             name: "{{ base_package_groups }}"
@@ -61,6 +66,11 @@
             name: "{{ optional_package_groups.multimedia }}"
             state: present
         when: install_multimedia_group | bool
+
+      - name: Install multimedia codec packages
+        ansible.builtin.dnf:
+            name: "{{ multimedia_packages }}"
+            state: present
 
       - name: Install optional hardware support group
         ansible.builtin.dnf:

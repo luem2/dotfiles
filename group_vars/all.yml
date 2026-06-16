@@ -79,6 +79,9 @@ repo_packages:
     - code
     - google-chrome-stable
 
+multimedia_packages:
+    - libavcodec-freeworld
+
 flatpak_apps:
     - io.dbeaver.DBeaverCommunity
     - com.usebruno.Bruno
@@ -140,6 +143,8 @@ yazi_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:lihaohong:
 
 starship_copr_repo: atim/starship
 starship_copr_repo_file: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
+
+rpmfusion_free_release_url: "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm"
 
 install_steam: false
 gaming_packages:
