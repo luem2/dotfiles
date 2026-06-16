@@ -147,7 +147,6 @@ window-rule {
     match app-id=r#"^gnome-calculator$"#
     match app-id=r#"^galculator$"#
     match app-id=r#"^blueman-manager$"#
-    match app-id=r#"^org\.gnome\.Nautilus$"#
     match app-id=r#"^steam$"#
     match app-id=r#"^xdg-desktop-portal$"#
     open-floating true
@@ -204,7 +203,7 @@ include "dms/binds.kdl"
 binds {
     Mod+Return hotkey-overlay-title="Open Terminal" { spawn "ghostty"; }
     Mod+Backspace { maximize-column; }
-    Mod+F hotkey-overlay-title="Nautilus" { spawn "nautilus"; }
+    Mod+F hotkey-overlay-title="Yazi" { spawn "ghostty" "-e" "yazi"; }
     Mod+B hotkey-overlay-title="Chrome" { spawn "google-chrome-stable"; }
     Mod+E hotkey-overlay-title="Zed" { spawn "zed"; }
     Mod+P hotkey-overlay-title="Power Menu" { spawn "dms" "ipc" "call" "powermenu" "toggle"; }

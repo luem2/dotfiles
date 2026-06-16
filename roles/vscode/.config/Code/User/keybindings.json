@@ -97,4 +97,8 @@
 		"key": "ctrl+k",
 		"when": "inQuickOpen"
 	},
+	{
+		"key": "ctrl+shift+/",
+		"command": "chatgpt.openSidebar"
+	},
 ]
